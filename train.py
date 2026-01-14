@@ -126,6 +126,7 @@ def get_model(args):
     if args.distributed:
         # Initialize Process Group
         dist.init_process_group(backend='nccl')
+        args.local_rank = os.environ['LOCAL_RANK']
         print('args.local_rank: ', args.local_rank)
         torch.cuda.set_device(args.local_rank)
         device = torch.device('cuda', args.local_rank)
