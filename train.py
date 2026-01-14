@@ -121,7 +121,7 @@ def setup(rank, world_size):
 def cleanup():
     dist.destroy_process_group()
 
-def get_model(args, rank):
+def get_model(args, rank=0, world_size=0):
     # Create model and optimizer
     model = eval(args.arch).OneModel(args)
     optimizer = model.get_optim(model, args, LR=args.base_lr)
@@ -133,8 +133,8 @@ def get_model(args, rank):
     # Initialize process for distributed training
     if args.distributed:
         setup(rank, world_size)
+        args.local_rank = rank
         torch.cuda.set_device(rank)
-        torch.cuda.set_device(args.local_rank)
         device = torch.device('cuda', rank)
         model.to(device)
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
@@ -204,7 +204,7 @@ def main(rank=0, world_size=0):
     # Create model and optimizer
     if main_process():
         logger.info("=> creating model ...")
-    model, optimizer = get_model(args, rank)
+    model, optimizer = get_model(args, rank, world_size)
     # if main_process():
         # logger.info(model)
     if main_process() and args.viz:

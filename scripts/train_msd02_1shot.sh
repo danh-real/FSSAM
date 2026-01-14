@@ -39,4 +39,5 @@ python train.py \
     --num_refine=3 \
     --ver_refine=v1 \
     --ver_dino=$ver_dino \
+    --distributed \
     2>&1 | tee ${result_dir}/train-$now.log
