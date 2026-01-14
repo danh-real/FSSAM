@@ -52,6 +52,7 @@ def get_parser():
                         help='version of memory refinement')
     parser.add_argument('--ver_dino', type=str, default="dinov2_vitb14", choices=["dinov2_vitb14", "dinov2_vitl14", "dinov2_vitg14"],
                         help="version of dino")
+    parser.add_argument('--distributed', help='training distributed', action="store_true")
     parser.add_argument('--opts', help='see config/ade20k/ade20k_pspnet50.yaml for all options', default=None,
                         nargs=argparse.REMAINDER)
     args = parser.parse_args()
@@ -112,8 +113,15 @@ def eval_seg(pred, mask):
     
     return iou, dice, fb_iou
 
+def setup(rank, world_size):
+    os.environ['MASTER_ADDR'] = 'localhost'
+    os.environ['MASTER_PORT'] = '12348'
+    dist.init_process_group(backend="nccl", rank=rank, world_size=world_size)
 
-def get_model(args):
+def cleanup():
+    dist.destroy_process_group()
+
+def get_model(args, rank):
     # Create model and optimizer
     model = eval(args.arch).OneModel(args)
     optimizer = model.get_optim(model, args, LR=args.base_lr)
@@ -124,19 +132,18 @@ def get_model(args):
 
     # Initialize process for distributed training
     if args.distributed:
-        # Initialize Process Group
-        dist.init_process_group(backend='nccl')
-        args.local_rank = os.environ['LOCAL_RANK']
-        print('args.local_rank: ', args.local_rank)
+        setup(rank, world_size)
+        torch.cuda.set_device(rank)
         torch.cuda.set_device(args.local_rank)
-        device = torch.device('cuda', args.local_rank)
+        device = torch.device('cuda', rank)
         model.to(device)
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.local_rank],
                                                           output_device=args.local_rank,
                                                           find_unused_parameters=True)
     else:
-        model = model.cuda()
+        device = torch.device('cuda', args.gpu_device)
+        model = model.to(device)
 
     # Resume
     get_save_path(args)
@@ -183,7 +190,7 @@ def main_process():
     return not args.distributed or (args.distributed and (args.local_rank == 0))
 
 
-def main():
+def main(rank=0, world_size=0):
     global args, logger, writer
     args = get_parser()
     logger = get_logger()
@@ -191,13 +198,13 @@ def main():
     if main_process():
         print(args)
 
-    if args.manual_seed is not None:
-        setup_seed(args.manual_seed, args.seed_deterministic)
+    # if args.manual_seed is not None:
+    #     setup_seed(args.manual_seed, args.seed_deterministic)
 
     # Create model and optimizer
     if main_process():
         logger.info("=> creating model ...")
-    model, optimizer = get_model(args)
+    model, optimizer = get_model(args, rank)
     # if main_process():
         # logger.info(model)
     if main_process() and args.viz:
@@ -230,7 +237,7 @@ def main():
         train_data = dataset_msd.MSD(split=args.split, shot=args.shot, data_root=args.data_root,
                                      data_list=args.train_list, transform=train_transform, mode='train',
                                      ann_type=args.ann_type, data_set=args.data_set, use_split_coco=args.use_split_coco)
-    train_sampler = DistributedSampler(train_data) if args.distributed else None
+    train_sampler = DistributedSampler(train_data, num_replicas=world_size, rank=rank) if args.distributed else None
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=args.batch_size, num_workers=args.workers,
                                                pin_memory=True, sampler=train_sampler, drop_last=True,
                                                shuffle=False if args.distributed else True)
@@ -339,6 +346,9 @@ def main():
         print('FBIoU:{:.4f} \t pIoU:{:.4f}'.format(best_FBiou, best_dice))
         print('>' * 80)
         print('%s' % datetime.datetime.now())
+        
+    if args.distributed:
+        cleanup()
 
 
 def train(train_loader, val_loader, model, optimizer, epoch, scaler):
@@ -659,4 +669,17 @@ def validate(val_loader, model, warmup=False):
 
 
 if __name__ == '__main__':
-    main()
+    seed = 0
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    # torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    args = get_parser()
+
+    if args.distributed:
+        world_size = torch.cuda.device_count()
+        mp.spawn(main, args=(world_size,), nprocs=world_size, join=True)
+    else:
+        main()
