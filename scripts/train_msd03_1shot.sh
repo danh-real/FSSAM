@@ -33,7 +33,7 @@ else
   exit 1
 fi
 
-python3 -m torch.distributed.launch --nproc_per_node=4 --master_port=29500  python train.py \
+python train.py \
     --config=${config} \
     --arch=${arch} \
     --num_refine=3 \
