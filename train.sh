@@ -6,9 +6,10 @@ shot=$5  # 1/5
 arch=$6  # FSSAM
 net=$7  # small
 
+
 if [ $shot -eq 1 ]; then
   postfix=batch
-elif [ $gpu -eq 5 ]; then
+elif [ $shot -eq 5 ]; then
   postfix=5s_batch
 else
   echo "Only 1 and 5 shot are supported"

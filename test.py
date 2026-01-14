@@ -9,6 +9,7 @@ import logging
 import argparse
 import math
 from visdom import Visdom
+from tabulate import tabulate
 import os.path as osp
 
 import torch
@@ -27,7 +28,7 @@ from tensorboardX import SummaryWriter
 
 from model import FSSAM, FSSAM5s
 
-from util import dataset
+from util import dataset, dataset_sarcoma
 from util import transform_new as transform, transform_tri, config
 from util.util import AverageMeter, poly_learning_rate, intersectionAndUnionGPU, get_model_para_number, setup_seed, \
     get_logger, get_save_path, \
@@ -65,6 +66,55 @@ def get_parser():
         cfg = config.merge_cfg_from_list(cfg, args.opts)
     return cfg
 
+def score_cal(seg_map, prd_map):
+    '''
+    seg_map B * H * W
+    prd_map B * H * W
+    '''
+    assert seg_map.ndim == 2 or seg_map.ndim == 3
+    assert prd_map.ndim == 2 or prd_map.ndim == 3
+    if seg_map.ndim == 2:
+        seg_map = seg_map.unsqueeze(0)
+        prd_map = prd_map.unsqueeze(0)
+        
+    total_num = seg_map.shape[0]
+    
+    seg_map = seg_map.reshape(total_num, -1)
+    prd_map = prd_map.reshape(total_num, -1)
+    dot_product = (seg_map * prd_map)
+    b_seg_map = 1 - seg_map
+    b_prd_map = 1 - prd_map
+    b_dot_product = (b_seg_map * b_prd_map)
+
+    sum_dot = torch.sum(dot_product, dim=-1)
+    sum_seg = torch.sum(seg_map, dim=-1)
+    sum_prd = torch.sum(prd_map, dim=-1)
+    b_sum_dot = torch.sum(b_dot_product, dim=-1)
+    b_sum_seg = torch.sum(b_seg_map, dim=-1)
+    b_sum_prd = torch.sum(b_prd_map, dim=-1)
+
+    iou_score = sum_dot/((sum_seg + sum_prd)-sum_dot)
+    dice_score = 2.*sum_dot / (sum_seg+sum_prd)
+    
+    b_iou_score = b_sum_dot/((b_sum_seg + b_sum_prd)-b_sum_dot)
+    fb_iou_score = (iou_score + b_iou_score) / 2
+
+    return iou_score, dice_score, fb_iou_score
+
+def eval_seg(pred, mask):
+    """
+    Args:
+        pred: [D, H, W]
+        mask: [D, H, W]
+    """
+    pred = (torch.sigmoid(pred) > 0.5).float()
+    iou, dice, fb_iou = score_cal(mask, pred)
+    
+    iou[iou.isnan()] = 0. 
+    dice[dice.isnan()] = 0.
+    fb_iou[fb_iou.isnan()] = 0.
+    
+    return iou, dice, fb_iou
 
 def get_model(args):
     model = eval(args.arch).OneModel(args)
@@ -121,7 +171,7 @@ def main():
 
     logger.info("=> creating model ...")
     model, optimizer = get_model(args)
-    logger.info(model)
+    # logger.info(model)
 
     # ----------------------  DATASET  ----------------------
     value_scale = 255
@@ -145,6 +195,11 @@ def main():
             val_data = dataset.SemData(split=args.split, shot=args.shot, data_root=args.data_root,
                                        data_list=args.val_list, transform=val_transform, mode='val',
                                        ann_type=args.ann_type, data_set=args.data_set, use_split_coco=args.use_split_coco)
+        elif args.data_set ==  'sarcoma':
+            val_data = dataset_sarcoma.Sarcoma(split=args.split, shot=args.shot, data_root=args.data_root,
+                                       data_list=args.val_list, transform=val_transform, mode='val',
+                                       ann_type=args.ann_type, data_set=args.data_set, use_split_coco=args.use_split_coco)
+        
         val_loader = torch.utils.data.DataLoader(val_data, batch_size=args.batch_size_val, shuffle=False,
                                                  num_workers=args.workers, pin_memory=False, sampler=None)
 
@@ -158,13 +213,13 @@ def main():
     start_time = time.time()
     FBIoU_array = np.zeros(val_num)
     mIoU_array = np.zeros(val_num)
-    pIoU_array = np.zeros(val_num)
+    mDice_array = np.zeros(val_num)
     for val_id in range(val_num):
         val_seed = seed_array[val_id]
         print('Val: [{}/{}] \t Seed: {}'.format(val_id + 1, val_num, val_seed))
-        fb_iou, miou, piou = validate(val_loader, model, val_seed, args.episode)
-        FBIoU_array[val_id], mIoU_array[val_id], pIoU_array[val_id] = \
-            fb_iou, miou, piou
+        miou, dice, fb_iou = validate(val_loader, model, val_seed, args.episode)
+        FBIoU_array[val_id], mIoU_array[val_id], mDice_array[val_id] = \
+            fb_iou, miou, dice
 
     total_time = time.time() - start_time
     t_m, t_s = divmod(total_time, 60)
@@ -176,15 +231,15 @@ def main():
     print('Seed:  {}'.format(seed_array))
     print('mIoU:  {}'.format(np.round(mIoU_array, 4)))
     print('FBIoU: {}'.format(np.round(FBIoU_array, 4)))
-    print('pIoU:  {}'.format(np.round(pIoU_array, 4)))
+    print('mDice:  {}'.format(np.round(mDice_array, 4)))
     print('-' * 43)
     print('Best_Seed_m: {} \t Best_Seed_F: {} \t Best_Seed_p: {}'.format(seed_array[mIoU_array.argmax()],
                                                                          seed_array[FBIoU_array.argmax()],
-                                                                         seed_array[pIoU_array.argmax()]))
-    print('Best_mIoU: {:.4f} \t Best_FBIoU: {:.4f} \t Best_pIoU: {:.4f}'.format(
-        mIoU_array.max(), FBIoU_array.max(), pIoU_array.max()))
-    print('Mean_mIoU: {:.4f} \t Mean_FBIoU: {:.4f} \t Mean_pIoU: {:.4f}'.format(
-        mIoU_array.mean(), FBIoU_array.mean(), pIoU_array.mean()))
+                                                                         seed_array[mDice_array.argmax()]))
+    # print('Best_mIoU: {:.4f} \t Best_FBIoU: {:.4f} \t Best_pIoU: {:.4f}'.format(
+    #     mIoU_array.max(), FBIoU_array.max(), mDice_array.max()))
+    print('Mean_mIoU: {:.4f} \t Mean_FBIoU: {:.4f} \t Mean_mDice: {:.4f}'.format(
+        mIoU_array.mean(), FBIoU_array.mean(), mDice_array.mean()))
 
 
 def validate(val_loader, model, val_seed, episode, warmup=False):
@@ -205,10 +260,14 @@ def validate(val_loader, model, val_seed, episode, warmup=False):
     elif args.data_set == 'coco':
         test_num = episode if not warmup else 1000
         split_gap = 20
+    else:
+        test_num = len(val_loader)
+        split_gap = 0
 
     class_intersection_meter = [0] * split_gap
     class_union_meter = [0] * split_gap
 
+    score_per_class = {}
     setup_seed(val_seed, args.seed_deterministic)
 
     pos_weight = torch.ones([1]).cuda() * 2
@@ -252,23 +311,39 @@ def validate(val_loader, model, val_seed, episode, warmup=False):
 
                     output = F.interpolate(output.unsqueeze(0), size=target.size()[1:], mode='bilinear', align_corners=True)
                     output = output.squeeze(0)
-                    label = target.clone()
-                    label[label == 255] = 0
-                    loss = criterion(output, label.float())
+                    # label = target.clone()
+                    # label[label == 255] = 0
+                    # loss = criterion(output, label.float())
         
             output = torch.sigmoid(output)
             output[output >= 0.5] = 1
             output[output < 0.5] = 0
             subcls = subcls[0].cpu().numpy()[0]
+            if subcls not in score_per_class.keys():
+                score_per_class[subcls] = {
+                    "iou": torch.FloatTensor([]).cuda(non_blocking=True),
+                    "dice": torch.FloatTensor([]).cuda(non_blocking=True),
+                    "fb_iou": torch.FloatTensor([]).cuda(non_blocking=True),
+                }
+            (
+                iou,
+                dice,
+                fb_iou,
+            ) = eval_seg(output, target)
+            
+            score_dict = score_per_class[subcls]
+            score_dict["iou"] = torch.cat([score_dict["iou"], iou.detach()])
+            score_dict["dice"] = torch.cat([score_dict["dice"], dice.detach()])
+            score_dict["fb_iou"] = torch.cat([score_dict["fb_iou"], fb_iou.detach()])
 
-            intersection, union, new_target = intersectionAndUnionGPU(output, target, args.classes, args.ignore_label)
-            intersection, union, new_target = intersection.cpu().numpy(), union.cpu().numpy(), new_target.cpu().numpy()
-            intersection_meter.update(intersection), union_meter.update(union), target_meter.update(new_target)
-            class_intersection_meter[subcls] += intersection[1]
-            class_union_meter[subcls] += union[1]
+            # intersection, union, new_target = intersectionAndUnionGPU(output, target, args.classes, args.ignore_label)
+            # intersection, union, new_target = intersection.cpu().numpy(), union.cpu().numpy(), new_target.cpu().numpy()
+            # intersection_meter.update(intersection), union_meter.update(union), target_meter.update(new_target)
+            # class_intersection_meter[subcls] += intersection[1]
+            # class_union_meter[subcls] += union[1]
 
-            accuracy = sum(intersection_meter.val) / (sum(target_meter.val) + 1e-10)
-            loss_meter.update(loss.item(), input.size(0))
+            # accuracy = sum(intersection_meter.val) / (sum(target_meter.val) + 1e-10)
+            # loss_meter.update(loss.item(), input.size(0))
             batch_time.update(time.time() - end)
             end = time.time()
 
@@ -278,45 +353,55 @@ def validate(val_loader, model, val_seed, episode, warmup=False):
             t_h, t_m = divmod(t_m, 60)
             remain_time = '{:02d}:{:02d}:{:02d}'.format(int(t_h), int(t_m), int(t_s))
 
-            if ((i + 1) % round((test_num / 100)) == 0):
+            if ((i + 1) % round((test_num / 20)) == 0):
                 logger.info('Test: [{}/{}] '
                             'Data {data_time.val:.3f} ({data_time.avg:.3f}) '
                             'Batch {batch_time.val:.3f} ({batch_time.avg:.3f}) '
                             'Remain {remain_time} '
-                            'Loss {loss_meter.val:.4f} ({loss_meter.avg:.4f}) '
-                            'Accuracy {accuracy:.4f}.'.format(iter_num * args.batch_size_val, test_num,
+                            'Loss {loss_meter.val:.4f} ({loss_meter.avg:.4f}).'.format(iter_num * args.batch_size_val, test_num,
                                                               data_time=data_time,
                                                               batch_time=batch_time,
                                                               remain_time=remain_time,
-                                                              loss_meter=loss_meter,
-                                                              accuracy=accuracy))
+                                                              loss_meter=loss_meter))
     if not warmup:
-        val_time = time.time() - val_start
+        avg = {
+            "iou": torch.FloatTensor([]).cuda(non_blocking=True),
+            "dice": torch.FloatTensor([]).cuda(non_blocking=True),
+            "fb_iou": torch.FloatTensor([]).cuda(non_blocking=True),
+        }
+        
+        table_data = []
+        
+        for name, metrics_dict in score_per_class.items():
+            miou = metrics_dict["iou"].mean(dim=0, keepdim=True)
+            mdice = metrics_dict["dice"].mean(dim=0, keepdim=True)
+            mfb_iou = metrics_dict["fb_iou"].mean(dim=0, keepdim=True)
+            
+            table_data.append((
+                name, 
+                miou.item(), 
+                mdice.item(), 
+                mfb_iou.item(),
+            ))
+            
+            avg["iou"] = torch.cat([avg["iou"], miou])
+            avg["dice"] = torch.cat([avg["dice"], mdice])
+            avg["fb_iou"] = torch.cat([avg["fb_iou"], mfb_iou])
+            
+        avg["iou"] = avg["iou"].mean()
+        avg["dice"] = avg["dice"].mean()
+        avg["fb_iou"] = avg["fb_iou"].mean()
+                
+        table_data.append((
+            "Average",
+            avg["iou"].item(),
+            avg["dice"].item(),
+            avg["fb_iou"].item(),
+        ))
 
-        iou_class = intersection_meter.sum / (union_meter.sum + 1e-10)
-        mIoU = np.mean(iou_class)
+        print(tabulate(table_data, headers=["name", "iou", "dice", "fb_iou"], floatfmt=".4f", tablefmt="grid"))
 
-        class_iou_class = []
-        class_miou = 0
-        for i in range(len(class_intersection_meter)):
-            class_iou = class_intersection_meter[i] / (class_union_meter[i] + 1e-10)
-            class_iou_class.append(class_iou)
-            class_miou += class_iou
-
-        class_miou = class_miou * 1.0 / len(class_intersection_meter)
-        logger.info('meanIoU---Val result: mIoU {:.4f}.'.format(class_miou))  # final
-        logger.info('<<<<<<< Novel Results <<<<<<<')
-        for i in range(split_gap):
-            logger.info('Class_{} Result: iou {:.4f}.'.format(i + 1, class_iou_class[i]))
-
-        logger.info('FBIoU---Val result: FBIoU {:.4f}.'.format(mIoU))
-        for i in range(args.classes):
-            logger.info('Class_{} Result: iou_f {:.4f}.'.format(i, iou_class[i]))
-        logger.info('<<<<<<<<<<<<<<<<< End Evaluation <<<<<<<<<<<<<<<<<')
-
-        print('total time: {:.4f}, avg inference time: {:.4f}, count: {}'.format(val_time, model_time.avg, test_num))
-
-        return mIoU, class_miou, iou_class[1]
+        return avg["iou"], avg["dice"], avg["fb_iou"]
 
 
 if __name__ == '__main__':

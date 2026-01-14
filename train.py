@@ -9,6 +9,7 @@ import logging
 import argparse
 import math
 from visdom import Visdom
+from tabulate import tabulate
 import os.path as osp
 
 import torch
@@ -27,7 +28,7 @@ from tensorboardX import SummaryWriter
 
 from model import FSSAM, FSSAM5s
 
-from util import dataset
+from util import dataset, dataset_sarcoma, dataset_msd
 from util import transform_new as transform, transform_tri, config
 from util.util import AverageMeter, poly_learning_rate, intersectionAndUnionGPU, get_model_para_number, setup_seed, \
     get_logger, get_save_path, \
@@ -60,6 +61,56 @@ def get_parser():
     if args.opts is not None:
         cfg = config.merge_cfg_from_list(cfg, args.opts)
     return cfg
+
+def score_cal(seg_map, prd_map):
+    '''
+    seg_map B * H * W
+    prd_map B * H * W
+    '''
+    assert seg_map.ndim == 2 or seg_map.ndim == 3
+    assert prd_map.ndim == 2 or prd_map.ndim == 3
+    if seg_map.ndim == 2:
+        seg_map = seg_map.unsqueeze(0)
+        prd_map = prd_map.unsqueeze(0)
+        
+    total_num = seg_map.shape[0]
+    
+    seg_map = seg_map.reshape(total_num, -1)
+    prd_map = prd_map.reshape(total_num, -1)
+    dot_product = (seg_map * prd_map)
+    b_seg_map = 1 - seg_map
+    b_prd_map = 1 - prd_map
+    b_dot_product = (b_seg_map * b_prd_map)
+
+    sum_dot = torch.sum(dot_product, dim=-1)
+    sum_seg = torch.sum(seg_map, dim=-1)
+    sum_prd = torch.sum(prd_map, dim=-1)
+    b_sum_dot = torch.sum(b_dot_product, dim=-1)
+    b_sum_seg = torch.sum(b_seg_map, dim=-1)
+    b_sum_prd = torch.sum(b_prd_map, dim=-1)
+
+    iou_score = sum_dot/((sum_seg + sum_prd)-sum_dot)
+    dice_score = 2.*sum_dot / (sum_seg+sum_prd)
+    
+    b_iou_score = b_sum_dot/((b_sum_seg + b_sum_prd)-b_sum_dot)
+    fb_iou_score = (iou_score + b_iou_score) / 2
+
+    return iou_score, dice_score, fb_iou_score
+
+def eval_seg(pred, mask):
+    """
+    Args:
+        pred: [D, H, W]
+        mask: [D, H, W]
+    """
+    pred = (torch.sigmoid(pred) > 0.5).float()
+    iou, dice, fb_iou = score_cal(mask, pred)
+    
+    iou[iou.isnan()] = 0. 
+    dice[dice.isnan()] = 0.
+    fb_iou[fb_iou.isnan()] = 0.
+    
+    return iou, dice, fb_iou
 
 
 def get_model(args):
@@ -146,8 +197,8 @@ def main():
     if main_process():
         logger.info("=> creating model ...")
     model, optimizer = get_model(args)
-    if main_process():
-        logger.info(model)
+    # if main_process():
+        # logger.info(model)
     if main_process() and args.viz:
         writer = SummaryWriter(args.result_path)
 
@@ -170,6 +221,14 @@ def main():
         train_data = dataset.SemData(split=args.split, shot=args.shot, data_root=args.data_root,
                                      data_list=args.train_list, transform=train_transform, mode='train',
                                      ann_type=args.ann_type, data_set=args.data_set, use_split_coco=args.use_split_coco)
+    elif args.data_set == 'sarcoma':
+        train_data = dataset_sarcoma.Sarcoma(split=args.split, shot=args.shot, data_root=args.data_root,
+                                     data_list=args.train_list, transform=train_transform, mode='train',
+                                     ann_type=args.ann_type, data_set=args.data_set, use_split_coco=args.use_split_coco)
+    elif args.data_set.startswith('msd'):
+        train_data = dataset_msd.MSD(split=args.split, shot=args.shot, data_root=args.data_root,
+                                     data_list=args.train_list, transform=train_transform, mode='train',
+                                     ann_type=args.ann_type, data_set=args.data_set, use_split_coco=args.use_split_coco)
     train_sampler = DistributedSampler(train_data) if args.distributed else None
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=args.batch_size, num_workers=args.workers,
                                                pin_memory=True, sampler=train_sampler, drop_last=True,
@@ -190,15 +249,23 @@ def main():
             val_data = dataset.SemData(split=args.split, shot=args.shot, data_root=args.data_root,
                                        data_list=args.val_list, transform=val_transform, mode='val',
                                        ann_type=args.ann_type, data_set=args.data_set, use_split_coco=args.use_split_coco)
+        elif args.data_set == 'sarcoma':
+            val_data = dataset_sarcoma.Sarcoma(split=args.split, shot=args.shot, data_root=args.data_root,
+                                       data_list=args.val_list, transform=val_transform, mode='val',
+                                       ann_type=args.ann_type, data_set=args.data_set, use_split_coco=args.use_split_coco)
+        elif args.data_set.startswith('msd'):
+            val_data = dataset_msd.MSD(split=args.split, shot=args.shot, data_root=args.data_root,
+                                       data_list=args.val_list, transform=val_transform, mode='val',
+                                       ann_type=args.ann_type, data_set=args.data_set, use_split_coco=args.use_split_coco)
         val_loader = torch.utils.data.DataLoader(val_data, batch_size=args.batch_size_val, shuffle=False,
                                                  num_workers=args.workers, pin_memory=False, sampler=None)
 
     # ----------------------  TRAINVAL  ----------------------
-    global best_miou, best_FBiou, best_piou, best_epoch, keep_epoch, val_num
+    global best_miou, best_FBiou, best_dice, best_epoch, keep_epoch, val_num
     global best_miou_m, best_miou_b, best_FBiou_m
     best_miou = 0.
     best_FBiou = 0.
-    best_piou = 0.
+    best_dice = 0.
     best_epoch = 0
     keep_epoch = 0
     val_num = 0
@@ -236,16 +303,16 @@ def main():
 
         # -----------------------  VAL  -----------------------
         if args.evaluate and epoch % 1 == 0:
-            loss_val, FBIoU, mIoU, pIoU = validate(val_loader, model)
+            mIoU, mDice, mFBIoU = validate(val_loader, model)
             val_num += 1
             if main_process() and args.viz:
-                writer.add_scalar('loss_val', loss_val, epoch_log)
-                writer.add_scalar('FBIoU_val', FBIoU, epoch_log)
+                writer.add_scalar('mDice_val', mDice, epoch_log)
+                writer.add_scalar('FBIoU_val', mFBIoU, epoch_log)
                 writer.add_scalar('mIoU_val', mIoU, epoch_log)
 
             # save model for <testing>
-            if mIoU > best_miou:
-                best_miou, best_FBiou, best_piou, best_epoch = mIoU, FBIoU, pIoU, epoch
+            if mDice > best_dice:
+                best_miou, best_dice, best_FBiou, best_epoch = mIoU, mDice, mFBIoU, epoch
                 keep_epoch = 0
                 if args.shot == 1:
                     filename = args.snapshot_path + '/train_epoch_' + str(epoch) + '_{:.4f}'.format(best_miou) + '.pth'
@@ -268,13 +335,13 @@ def main():
         print('\n<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  Final Best Result   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
         print(args.arch + '\t Group:{} \t Best_step:{}'.format(args.split, best_epoch))
         print('mIoU:{:.4f}'.format(best_miou))
-        print('FBIoU:{:.4f} \t pIoU:{:.4f}'.format(best_FBiou, best_piou))
+        print('FBIoU:{:.4f} \t pIoU:{:.4f}'.format(best_FBiou, best_dice))
         print('>' * 80)
         print('%s' % datetime.datetime.now())
 
 
 def train(train_loader, val_loader, model, optimizer, epoch, scaler):
-    global best_miou, best_FBiou, best_piou, best_epoch, keep_epoch, val_num
+    global best_miou, best_FBiou, best_dice, best_epoch, keep_epoch, val_num
     batch_time = AverageMeter()
     data_time = AverageMeter()
     main_loss_meter = AverageMeter()
@@ -309,27 +376,30 @@ def train(train_loader, val_loader, model, optimizer, epoch, scaler):
 
         with autocast():
             output, main_loss, aux_loss1, aux_loss2 = model(s_x=s_input, s_y=s_mask, x=input, y_m=target, cat_idx=subcls)
-            loss = main_loss + args.aux_weight1 * aux_loss1 + args.aux_weight2 * aux_loss2
+            # loss = main_loss + args.aux_weight1 * aux_loss1 + args.aux_weight2 * aux_loss2
+            loss = main_loss
         optimizer.zero_grad()
+        # loss.backward()
+        # optimizer.step()
         scaler.scale(loss).backward()
         scaler.step(optimizer)
         scaler.update()
         
         n = input.size(0)  # batch_size
 
-        output = torch.sigmoid(output)
-        output[output >= 0.5] = 1
-        output[output < 0.5] = 0
+        # output = torch.sigmoid(output)
+        # output[output >= 0.5] = 1
+        # output[output < 0.5] = 0
 
-        intersection, union, target = intersectionAndUnionGPU(output, target, args.classes, args.ignore_label)
-        intersection, union, target = intersection.cpu().numpy(), union.cpu().numpy(), target.cpu().numpy()
-        intersection_meter.update(intersection), union_meter.update(union), target_meter.update(target)
+        # intersection, union, target = intersectionAndUnionGPU(output, target, args.classes, args.ignore_label)
+        # intersection, union, target = intersection.cpu().numpy(), union.cpu().numpy(), target.cpu().numpy()
+        # intersection_meter.update(intersection), union_meter.update(union), target_meter.update(target)
 
-        accuracy = sum(intersection_meter.val) / (sum(target_meter.val) + 1e-10)  # allAcc
+        # accuracy = sum(intersection_meter.val) / (sum(target_meter.val) + 1e-10)  # allAcc
 
         main_loss_meter.update(main_loss.item(), n)
-        aux_loss_meter1.update(aux_loss1.item(), n)
-        aux_loss_meter2.update(aux_loss2.item(), n)
+        # aux_loss_meter1.update(aux_loss1.item(), n)
+        # aux_loss_meter2.update(aux_loss2.item(), n)
         loss_meter.update(loss.item(), n)
 
         batch_time.update(time.time() - end - val_time)
@@ -346,19 +416,11 @@ def train(train_loader, val_loader, model, optimizer, epoch, scaler):
                         'Data {data_time.val:.3f} ({data_time.avg:.3f}) '
                         'Batch {batch_time.val:.3f} ({batch_time.avg:.3f}) '
                         'Remain {remain_time} '
-                        'MainLoss {main_loss_meter.val:.4f} '
-                        'AuxLoss1 {aux_loss_meter1.val:.4f} '
-                        'AuxLoss2 {aux_loss_meter2.val:.4f} '
-                        'Loss {loss_meter.val:.4f} '
-                        'Accuracy {accuracy:.4f}.'.format(epoch + 1, args.epochs, i + 1, len(train_loader),
+                        'Loss {loss_meter.val:.4f} '.format(epoch + 1, args.epochs, i + 1, len(train_loader),
                                                           batch_time=batch_time,
                                                           data_time=data_time,
                                                           remain_time=remain_time,
-                                                          main_loss_meter=main_loss_meter,
-                                                          aux_loss_meter1=aux_loss_meter1,
-                                                          aux_loss_meter2=aux_loss_meter2,
-                                                          loss_meter=loss_meter,
-                                                          accuracy=accuracy))
+                                                          loss_meter=loss_meter,))
             if args.viz:
                 writer.add_scalar('loss_train', loss_meter.val, current_iter)
                 writer.add_scalar('loss_train_main', main_loss_meter.val, current_iter)
@@ -367,11 +429,11 @@ def train(train_loader, val_loader, model, optimizer, epoch, scaler):
 
         # -----------------------  SubEpoch VAL  -----------------------
         if args.evaluate and args.SubEpoch_val and ((args.epochs <= 100 and epoch % 1 == 0) or (epoch > 100)) and (i == round(len(train_loader) / 2)):  # <if> max_epoch<=100 <do> half_epoch Val
-            loss_val, FBIoU, mIoU, pIoU = validate(val_loader, model)
+            mIoU, mDice, mFBIoU = validate(val_loader, model)
             val_num += 1
             # save model for <testing>
-            if mIoU > best_miou:
-                best_miou, best_FBiou, best_piou, best_epoch = mIoU, FBIoU, pIoU, (epoch - 0.5)
+            if mDice > best_dice:
+                best_miou, best_dice, best_FBiou, best_epoch = mIoU, mDice, mFBIoU, (epoch - 0.5)
                 keep_epoch = 0
                 if args.shot == 1:
                     filename = args.snapshot_path + '/train_epoch_' + str(epoch - 0.5) + '_{:.4f}'.format(
@@ -393,14 +455,15 @@ def train(train_loader, val_loader, model, optimizer, epoch, scaler):
     accuracy_class = intersection_meter.sum / (target_meter.sum + 1e-10)
     mIoU = np.mean(iou_class)
     mAcc = np.mean(accuracy_class)
-    allAcc = sum(intersection_meter.sum) / (sum(target_meter.sum) + 1e-10)
+    # allAcc = sum(intersection_meter.sum) / (sum(target_meter.sum) + 1e-10)
+    allAcc = 0
 
-    if main_process():
-        logger.info(
-            'Train result at epoch [{}/{}]: mIoU/mAcc/allAcc {:.4f}/{:.4f}/{:.4f}.'.format(epoch, args.epochs, mIoU,
-                                                                                           mAcc, allAcc))
-        for i in range(args.classes):
-            logger.info('Class_{} Result: iou/accuracy {:.4f}/{:.4f}.'.format(i, iou_class[i], accuracy_class[i]))
+    # if main_process():
+    #     logger.info(
+    #         'Train result at epoch [{}/{}]: mIoU/mAcc/allAcc {:.4f}/{:.4f}/{:.4f}.'.format(epoch, args.epochs, mIoU,
+    #                                                                                        mAcc, allAcc))
+    #     for i in range(args.classes):
+    #         logger.info('Class_{} Result: iou/accuracy {:.4f}/{:.4f}.'.format(i, iou_class[i], accuracy_class[i]))
 
     return main_loss_meter.avg, mIoU, mAcc, allAcc
 
@@ -423,9 +486,14 @@ def validate(val_loader, model, warmup=False):
     elif args.data_set == 'coco':
         test_num = 1000
         split_gap = 20
+    else:
+        test_num = len(val_loader)
+        split_gap = 2
 
     class_intersection_meter = [0] * split_gap
     class_union_meter = [0] * split_gap
+    
+    score_per_class = {}
 
     if args.manual_seed is not None and args.fix_random_seed_val:
         setup_seed(args.manual_seed, args.seed_deterministic)
@@ -508,61 +576,85 @@ def validate(val_loader, model, warmup=False):
                     priors = priors.detach().cpu().numpy()
                     np.save(prior_path, priors)
 
-            output = torch.sigmoid(output)
-            output[output >= 0.5] = 1
-            output[output < 0.5] = 0
+            # output = torch.sigmoid(output)
+            # output[output >= 0.5] = 1
+            # output[output < 0.5] = 0
             subcls = subcls[0].cpu().numpy()[0]
+            if subcls not in score_per_class.keys():
+                score_per_class[subcls] = {
+                    "iou": torch.FloatTensor([]).cuda(non_blocking=True),
+                    "dice": torch.FloatTensor([]).cuda(non_blocking=True),
+                    "fb_iou": torch.FloatTensor([]).cuda(non_blocking=True),
+                }
+            (
+                iou,
+                dice,
+                fb_iou,
+            ) = eval_seg(output, target)
+            
+            score_dict = score_per_class[subcls]
+            score_dict["iou"] = torch.cat([score_dict["iou"], iou.detach()])
+            score_dict["dice"] = torch.cat([score_dict["dice"], dice.detach()])
+            score_dict["fb_iou"] = torch.cat([score_dict["fb_iou"], fb_iou.detach()])
 
-            intersection, union, new_target = intersectionAndUnionGPU(output, target, args.classes, args.ignore_label)
-            intersection, union, new_target = intersection.cpu().numpy(), union.cpu().numpy(), new_target.cpu().numpy()
-            intersection_meter.update(intersection), union_meter.update(union), target_meter.update(new_target)
-            class_intersection_meter[subcls] += intersection[1]
-            class_union_meter[subcls] += union[1]
+            # intersection, union, new_target = intersectionAndUnionGPU(output, target, args.classes, args.ignore_label)
+            # intersection, union, new_target = intersection.cpu().numpy(), union.cpu().numpy(), new_target.cpu().numpy()
+            # intersection_meter.update(intersection), union_meter.update(union), target_meter.update(new_target)
+            # class_intersection_meter[subcls] += intersection[1]
+            # class_union_meter[subcls] += union[1]
 
-            accuracy = sum(intersection_meter.val) / (sum(target_meter.val) + 1e-10)
+            # accuracy = sum(intersection_meter.val) / (sum(target_meter.val) + 1e-10)
             loss_meter.update(loss.item(), input.size(0))
             batch_time.update(time.time() - end)
             end = time.time()
-            if ((i + 1) % round((test_num / 100)) == 0) and main_process():
+            if ((i + 1) % round((test_num / 20)) == 0) and main_process():
                 logger.info('Test: [{}/{}] '
                             'Data {data_time.val:.3f} ({data_time.avg:.3f}) '
                             'Batch {batch_time.val:.3f} ({batch_time.avg:.3f}) '
-                            'Loss {loss_meter.val:.4f} ({loss_meter.avg:.4f}) '
-                            'Accuracy {accuracy:.4f}.'.format(iter_num * args.batch_size_val, test_num,
+                            'Loss {loss_meter.val:.4f} ({loss_meter.avg:.4f}).'.format(iter_num * args.batch_size_val, test_num,
                                                               data_time=data_time,
                                                               batch_time=batch_time,
-                                                              loss_meter=loss_meter,
-                                                              accuracy=accuracy))
+                                                              loss_meter=loss_meter))
     if not warmup:
-        val_time = time.time() - val_start
-
-        iou_class = intersection_meter.sum / (union_meter.sum + 1e-10)
-        mIoU = np.mean(iou_class)
-
-        class_iou_class = []
-        class_miou = 0
-        for i in range(len(class_intersection_meter)):
-            class_iou = class_intersection_meter[i] / (class_union_meter[i] + 1e-10)
-            class_iou_class.append(class_iou)
-            class_miou += class_iou
-
-        class_miou = class_miou * 1.0 / len(class_intersection_meter)
+        avg = {
+            "iou": torch.FloatTensor([]).cuda(non_blocking=True),
+            "dice": torch.FloatTensor([]).cuda(non_blocking=True),
+            "fb_iou": torch.FloatTensor([]).cuda(non_blocking=True),
+        }
+        
+        table_data = []
+        
+        for name, metrics_dict in score_per_class.items():
+            miou = metrics_dict["iou"].mean(dim=0, keepdim=True)
+            mdice = metrics_dict["dice"].mean(dim=0, keepdim=True)
+            mfb_iou = metrics_dict["fb_iou"].mean(dim=0, keepdim=True)
+            
+            table_data.append((
+                name, 
+                miou.item(), 
+                mdice.item(), 
+                mfb_iou.item(),
+            ))
+            
+            avg["iou"] = torch.cat([avg["iou"], miou])
+            avg["dice"] = torch.cat([avg["dice"], mdice])
+            avg["fb_iou"] = torch.cat([avg["fb_iou"], mfb_iou])
+            
+        avg["iou"] = avg["iou"].mean()
+        avg["dice"] = avg["dice"].mean()
+        avg["fb_iou"] = avg["fb_iou"].mean()
+                
+        table_data.append((
+            "Average",
+            avg["iou"].item(),
+            avg["dice"].item(),
+            avg["fb_iou"].item(),
+        ))
 
         if main_process():
-            logger.info('meanIoU---Val result: mIoU {:.4f}.'.format(class_miou))  # final
+            print(tabulate(table_data, headers=["name", "iou", "dice", "fb_iou"], floatfmt=".4f", tablefmt="grid"))
 
-            logger.info('<<<<<<< Novel Results <<<<<<<')
-            for i in range(split_gap):
-                logger.info('Class_{} Result: iou {:.4f}.'.format(i + 1, class_iou_class[i]))
-
-            logger.info('FBIoU---Val result: FBIoU {:.4f}.'.format(mIoU))
-            for i in range(args.classes):
-                logger.info('Class_{} Result: iou {:.4f}.'.format(i, iou_class[i]))
-            logger.info('<<<<<<<<<<<<<<<<< End Evaluation <<<<<<<<<<<<<<<<<')
-
-            print('total time: {:.4f}, avg inference time: {:.4f}, count: {}'.format(val_time, model_time.avg, test_num))
-
-        return loss_meter.avg, mIoU, class_miou, iou_class[1]
+        return avg["iou"], avg["dice"], avg["fb_iou"]
 
 
 if __name__ == '__main__':

@@ -48,7 +48,13 @@ def sdp_kernel_context(dropout_p):
         enable_math=(OLD_GPU and dropout_p > 0.0) or MATH_KERNEL_ON,
         enable_mem_efficient=OLD_GPU,
     )
-
+    
+def Weighted_GAP(supp_feat, mask):
+    supp_feat = supp_feat * mask
+    feat_h, feat_w = supp_feat.shape[-2:][0], supp_feat.shape[-2:][1]
+    area = F.avg_pool2d(mask, (supp_feat.size()[2], supp_feat.size()[3])) * feat_h * feat_w + 0.0005
+    supp_feat = F.avg_pool2d(input=supp_feat, kernel_size=supp_feat.shape[-2:]) * feat_h * feat_w / area
+    return supp_feat
 
 class TwoWayTransformer(nn.Module):
     def __init__(
@@ -452,7 +458,7 @@ class RoPEAttention(Attention):
                 sup_mask = sup_mask[:, idx, ...].unsqueeze(1).expand(-1, self.num_heads, -1, -1, -1)  # b, #head, 1, h, w
                 sup_mask = rearrange(sup_mask, 'b n c h w -> (b n) c h w')  # b*#head, 1, h, w
                 
-                k_sup_pro = self.Weighted_GAP(k_sup, sup_mask).squeeze(-1)  # b*#head, c, 1
+                k_sup_pro = Weighted_GAP(k_sup, sup_mask).squeeze(-1)  # b*#head, c, 1
                 k_sup_pro = rearrange(k_sup_pro, '(b n) c 1 -> b n 1 c', n=self.num_heads)  # b, #head, 1, c
                 k_sup_pro_norm = torch.norm(k_sup_pro, 2, -1, True)  # b, #head, 1, c
 

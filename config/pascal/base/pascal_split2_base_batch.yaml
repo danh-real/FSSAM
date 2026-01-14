@@ -22,7 +22,7 @@ Train:
   use_split_coco: False # True means FWB setting
   # Optimizer
   batch_size: 2 # batch size for training (bs8 for 1GPU)
-  base_lr: 0.001  # 0.0025 for SGD/0.0001 for single AdamW
+  base_lr: 0.0001  # 0.0025 for SGD/0.0001 for single AdamW
   epochs: 300
   start_epoch: 0
   stop_interval: 100 # stop when the best result is not updated for "stop_interval" epochs

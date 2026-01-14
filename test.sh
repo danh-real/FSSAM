@@ -1,8 +1,8 @@
-dataset=$1  # pascal/coco
-exp_name=split$2  # 0/1/2/3
-shot=$3  # 1/5
-arch=$4  # FSSAM
-net=$5  # small
+dataset=sarcoma  # pascal/coco
+exp_name=split0  # 0/1/2/3
+shot=5  # 1/5
+arch=FSSAM5s  # FSSAM
+net=tiny  # small
 
 if [ $shot -eq 1 ]; then
   postfix=batch
@@ -15,7 +15,7 @@ fi
 
 config=config/${dataset}/${net}/${dataset}_${exp_name}_${net}_${postfix}.yaml
 
-python test.py \
+CUDA_VISIBLE_DEVICES=1 python test.py \
         --config=${config} \
         --arch=${arch} \
         --num_refine=3 \
