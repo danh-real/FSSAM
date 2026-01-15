@@ -43,7 +43,7 @@ Train:
   resized_val: True
   ori_resize: True  # use original label for evaluation
   # Else
-  workers: 32
+  workers: 4
   fix_bn: True
   manual_seed: 321
   seed_deterministic: False

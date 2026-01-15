@@ -126,7 +126,7 @@ def setup(rank, world_size):
 def cleanup():
     dist.destroy_process_group()
 
-def get_model(args, rank=0, world_size=0):
+def get_model(args, device='cuda'):
     # Create model and optimizer
     model = eval(args.arch).OneModel(args)
     optimizer = model.get_optim(model, args, LR=args.base_lr)
@@ -137,17 +137,12 @@ def get_model(args, rank=0, world_size=0):
 
     # Initialize process for distributed training
     if args.distributed:
-        setup(rank, world_size)
-        args.local_rank = rank
-        torch.cuda.set_device(rank)
-        device = torch.device('cuda', rank)
         model.to(device)
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.local_rank],
                                                           output_device=args.local_rank,
                                                           find_unused_parameters=True)
     else:
-        device = torch.device('cuda')
         model = model.to(device)
 
     # Resume
@@ -199,7 +194,7 @@ def main(rank=0, world_size=0):
     global args, logger, writer
     args = get_parser()
     logger = get_logger()
-    args.distributed = True if torch.cuda.device_count() > 1 else False
+    # args.distributed = True if torch.cuda.device_count() > 1 else False
     if main_process():
         print(args)
 
@@ -209,7 +204,16 @@ def main(rank=0, world_size=0):
     # Create model and optimizer
     if main_process():
         logger.info("=> creating model ...")
-    model, optimizer = get_model(args, rank, world_size)
+    
+    if args.distributed:
+        setup(rank, world_size)
+        args.local_rank = rank
+        torch.cuda.set_device(rank)
+        device = torch.device('cuda', rank)
+    else:
+        device = torch.device('cuda')
+        
+    model, optimizer = get_model(args, device)
     # if main_process():
         # logger.info(model)
     if main_process() and args.viz:
@@ -251,6 +255,7 @@ def main(rank=0, world_size=0):
                                      data_list=args.train_list, transform=train_transform, mode='train',
                                      ann_type=args.ann_type, data_set=args.data_set, use_split_coco=args.use_split_coco,
                                      image_size=(args.train_h, args.train_w))
+        
     train_sampler = DistributedSampler(train_data, num_replicas=world_size, rank=rank) if args.distributed else None
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=args.batch_size, num_workers=args.workers,
                                                pin_memory=True, sampler=train_sampler, drop_last=True,
@@ -280,8 +285,10 @@ def main(rank=0, world_size=0):
                                         data_list=args.train_list, transform=train_transform, mode='val',
                                         ann_type=args.ann_type, data_set=args.data_set, use_split_coco=args.use_split_coco,
                                         image_size=(args.train_h, args.train_w))
+        
+        val_sampler = DistributedSampler(val_data, num_replicas=world_size, rank=rank) if args.distributed else None
         val_loader = torch.utils.data.DataLoader(val_data, batch_size=args.batch_size_val, shuffle=False,
-                                                 num_workers=args.workers, pin_memory=False, sampler=None)
+                                                 num_workers=args.workers, pin_memory=False, sampler=val_sampler)
 
     # ----------------------  TRAINVAL  ----------------------
     global best_miou, best_FBiou, best_dice, best_epoch, keep_epoch, val_num
@@ -689,7 +696,7 @@ if __name__ == '__main__':
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
-    # torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
     args = get_parser()
 
