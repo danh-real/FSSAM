@@ -228,7 +228,7 @@ class OneModel(nn.Module):
         return qry_ae_mem_feats, prior_ae, prior_mem_qry_sup_fg
 
     # que_img, sup_img, sup_mask, que_mask(meta), cat_idx(meta)
-    @autocast()
+    @autocast(device_type="cuda")
     def forward(self, x, s_x, s_y, y_m, cat_idx=None, priors=None):
         b, _, h, w = x.size()  # b=1, 3, H, W
         with torch.autocast("cuda", dtype=torch.bfloat16):
