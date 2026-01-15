@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import torch
 from torch import nn
 import torch.nn.functional as F
-from torch.cuda.amp import autocast
+from torch import autocast
 from einops import rearrange
 from sam2.build_sam import build_sam2_video_predictor
 from sam2.utils.misc import load_video_frames_from_data
