@@ -37,6 +37,7 @@ from util.util import AverageMeter, poly_learning_rate, intersectionAndUnionGPU,
     
 import warnings
 warnings.filterwarnings("ignore")
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 cv2.ocl.setUseOpenCL(False)
 cv2.setNumThreads(0)
