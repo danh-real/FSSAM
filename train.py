@@ -34,7 +34,7 @@ from util import transform_new as transform, transform_tri, config
 from util.util import AverageMeter, poly_learning_rate, intersectionAndUnionGPU, get_model_para_number, setup_seed, \
     get_logger, get_save_path, \
     is_same_model, fix_bn, sum_list, check_makedirs
-    
+
 import warnings
 warnings.filterwarnings("ignore")
 warnings.filterwarnings("ignore", category=FutureWarning)
@@ -78,9 +78,9 @@ def score_cal(seg_map, prd_map):
     if seg_map.ndim == 2:
         seg_map = seg_map.unsqueeze(0)
         prd_map = prd_map.unsqueeze(0)
-        
+
     total_num = seg_map.shape[0]
-    
+
     seg_map = seg_map.reshape(total_num, -1)
     prd_map = prd_map.reshape(total_num, -1)
     dot_product = (seg_map * prd_map)
@@ -97,7 +97,7 @@ def score_cal(seg_map, prd_map):
 
     iou_score = sum_dot/((sum_seg + sum_prd)-sum_dot)
     dice_score = 2.*sum_dot / (sum_seg+sum_prd)
-    
+
     b_iou_score = b_sum_dot/((b_sum_seg + b_sum_prd)-b_sum_dot)
     fb_iou_score = (iou_score + b_iou_score) / 2
 
@@ -111,11 +111,11 @@ def eval_seg(pred, mask):
     """
     pred = (torch.sigmoid(pred) > 0.5).float()
     iou, dice, fb_iou = score_cal(mask, pred)
-    
-    iou[iou.isnan()] = 0. 
+
+    iou[iou.isnan()] = 0.
     dice[dice.isnan()] = 0.
     fb_iou[fb_iou.isnan()] = 0.
-    
+
     return iou, dice, fb_iou
 
 def setup(rank, world_size):
@@ -204,7 +204,7 @@ def main(rank=0, world_size=0):
     # Create model and optimizer
     if main_process():
         logger.info("=> creating model ...")
-    
+
     if args.distributed:
         setup(rank, world_size)
         args.local_rank = rank
@@ -212,7 +212,7 @@ def main(rank=0, world_size=0):
         device = torch.device('cuda', rank)
     else:
         device = torch.device('cuda')
-        
+
     model, optimizer = get_model(args, device)
     # if main_process():
         # logger.info(model)
@@ -255,7 +255,7 @@ def main(rank=0, world_size=0):
                                      data_list=args.train_list, transform=train_transform, mode='train',
                                      ann_type=args.ann_type, data_set=args.data_set, use_split_coco=args.use_split_coco,
                                      image_size=(args.train_h, args.train_w))
-        
+
     train_sampler = DistributedSampler(train_data, num_replicas=world_size, rank=rank) if args.distributed else None
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=args.batch_size, num_workers=args.workers,
                                                pin_memory=True, sampler=train_sampler, drop_last=True,
@@ -285,7 +285,7 @@ def main(rank=0, world_size=0):
                                         data_list=args.train_list, transform=train_transform, mode='val',
                                         ann_type=args.ann_type, data_set=args.data_set, use_split_coco=args.use_split_coco,
                                         image_size=(args.train_h, args.train_w))
-        
+
         val_sampler = DistributedSampler(val_data, num_replicas=world_size, rank=rank) if args.distributed else None
         val_loader = torch.utils.data.DataLoader(val_data, batch_size=args.batch_size_val, shuffle=False,
                                                  num_workers=args.workers, pin_memory=False, sampler=val_sampler)
@@ -304,7 +304,7 @@ def main(rank=0, world_size=0):
     best_FBiou_m = 0.
 
     start_time = time.time()
-    
+
     # ========================================
     # Test one batch first to warmup
     # Global autocast needs to cache the conversion of fp32->bfp16
@@ -368,7 +368,7 @@ def main(rank=0, world_size=0):
         print('FBIoU:{:.4f} \t pIoU:{:.4f}'.format(best_FBiou, best_dice))
         print('>' * 80)
         print('%s' % datetime.datetime.now())
-        
+
     if args.distributed:
         cleanup()
 
@@ -411,13 +411,14 @@ def train(train_loader, val_loader, model, optimizer, epoch, scaler):
             output, main_loss, aux_loss1, aux_loss2 = model(s_x=s_input, s_y=s_mask, x=input, y_m=target, cat_idx=subcls)
             # loss = main_loss + args.aux_weight1 * aux_loss1 + args.aux_weight2 * aux_loss2
             loss = main_loss
+        
         optimizer.zero_grad()
         # loss.backward()
         # optimizer.step()
         scaler.scale(loss).backward()
         scaler.step(optimizer)
         scaler.update()
-        
+
         n = input.size(0)  # batch_size
 
         # output = torch.sigmoid(output)
@@ -525,7 +526,7 @@ def validate(val_loader, model, warmup=False):
 
     class_intersection_meter = [0] * split_gap
     class_union_meter = [0] * split_gap
-    
+
     score_per_class = {}
 
     if args.manual_seed is not None and args.fix_random_seed_val:
@@ -552,7 +553,7 @@ def validate(val_loader, model, warmup=False):
 
     sam2_type = args.sam2_type
     prior_dir = "{}{}/".format(prior_dir, sam2_type)  # priors/pascal/small/
-    
+
     ver_dino = args.ver_dino
     prior_dir = "{}{}/".format(prior_dir, ver_dino)  # priors/pascal/small/dinov2_vitb14/
 
@@ -624,7 +625,7 @@ def validate(val_loader, model, warmup=False):
                 dice,
                 fb_iou,
             ) = eval_seg(output, target)
-            
+
             score_dict = score_per_class[subcls]
             score_dict["iou"] = torch.cat([score_dict["iou"], iou.detach()])
             score_dict["dice"] = torch.cat([score_dict["dice"], dice.detach()])
@@ -654,29 +655,29 @@ def validate(val_loader, model, warmup=False):
             "dice": torch.FloatTensor([]).cuda(non_blocking=True),
             "fb_iou": torch.FloatTensor([]).cuda(non_blocking=True),
         }
-        
+
         table_data = []
-        
+
         for name, metrics_dict in score_per_class.items():
             miou = metrics_dict["iou"].mean(dim=0, keepdim=True)
             mdice = metrics_dict["dice"].mean(dim=0, keepdim=True)
             mfb_iou = metrics_dict["fb_iou"].mean(dim=0, keepdim=True)
-            
+
             table_data.append((
-                name, 
-                miou.item(), 
-                mdice.item(), 
+                name,
+                miou.item(),
+                mdice.item(),
                 mfb_iou.item(),
             ))
-            
+
             avg["iou"] = torch.cat([avg["iou"], miou])
             avg["dice"] = torch.cat([avg["dice"], mdice])
             avg["fb_iou"] = torch.cat([avg["fb_iou"], mfb_iou])
-            
+
         avg["iou"] = avg["iou"].mean()
         avg["dice"] = avg["dice"].mean()
         avg["fb_iou"] = avg["fb_iou"].mean()
-                
+
         table_data.append((
             "Average",
             avg["iou"].item(),
