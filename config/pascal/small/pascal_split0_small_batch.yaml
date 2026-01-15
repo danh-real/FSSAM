@@ -30,7 +30,7 @@ Train:
   power: 0.9 # 0 means no decay
   momentum: 0.9
   weight_decay: 0.0  # 0.0 for AdamW (by default)
-  warmup: True
+  warmup: False
   # Viz & Save & Resume
   print_freq: 10
   save_freq: 10
@@ -41,7 +41,7 @@ Train:
   fix_random_seed_val: True
   batch_size_val: 1
   resized_val: True
-  ori_resize: True  # use original label for evaluation
+  ori_resize: False  # use original label for evaluation
   # Else
   workers: 4
   fix_bn: True

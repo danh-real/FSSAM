@@ -570,6 +570,7 @@ def validate(val_loader, model, warmup=False):
 
             if iter_num * args.batch_size_val >= test_num:
                 break
+            
             iter_num += 1
             data_time.update(time.time() - end)
 
