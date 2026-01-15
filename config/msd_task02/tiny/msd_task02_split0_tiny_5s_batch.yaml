@@ -1,5 +1,5 @@
 Data:
-  data_root: /data/datasets/jpg/MSD/Task02_Heart
+  data_root: /data/rlsam2/datasets/jpg/MSD/Task02_Heart
   train_list: ./lists/coco/train.txt
   val_list: ./lists/coco/val.txt
   classes: 2

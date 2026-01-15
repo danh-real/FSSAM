@@ -1,5 +1,5 @@
 Data:
-  data_root: /data/datasets/jpg/MSD/Task06_Lung
+  data_root: /data/rlsam2/datasets/jpg/MSD/Task06_Lung
   train_list: ./lists/coco/train.txt # not important
   val_list: ./lists/coco/val.txt # not important
   classes: 2

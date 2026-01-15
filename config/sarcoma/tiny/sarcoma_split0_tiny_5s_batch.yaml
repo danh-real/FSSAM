@@ -1,5 +1,5 @@
 Data:
-  data_root: /data/datasets/jpg/Sarcoma
+  data_root: /data/rlsam2/datasets/jpg/Sarcoma
   train_list: ./lists/coco/train.txt
   val_list: ./lists/coco/val.txt
   classes: 2
