@@ -23,12 +23,13 @@ import torch.multiprocessing as mp
 import torch.distributed as dist
 from torch.utils.data.distributed import DistributedSampler
 from torch.cuda.amp import autocast, GradScaler
+from torchvision import transforms
 
 from tensorboardX import SummaryWriter
 
 from model import FSSAM, FSSAM5s
 
-from util import dataset, dataset_sarcoma, dataset_msd
+from util import dataset, dataset_sarcoma, dataset_msd, dataset_btcv
 from util import transform_new as transform, transform_tri, config
 from util.util import AverageMeter, poly_learning_rate, intersectionAndUnionGPU, get_model_para_number, setup_seed, \
     get_logger, get_save_path, \
@@ -142,7 +143,7 @@ def get_model(args, rank=0, world_size=0):
                                                           output_device=args.local_rank,
                                                           find_unused_parameters=True)
     else:
-        device = torch.device('cuda', args.gpu_device)
+        device = torch.device('cuda')
         model = model.to(device)
 
     # Resume
@@ -213,18 +214,20 @@ def main(rank=0, world_size=0):
     # ----------------------  DATASET  ----------------------
     value_scale = 255
     mean = [0.485, 0.456, 0.406]
-    mean = [item * value_scale for item in mean]
+    # mean = [item * value_scale for item in mean]
     std = [0.229, 0.224, 0.225]
-    std = [item * value_scale for item in std]
+    # std = [item * value_scale for item in std]
     # Train
-    train_transform = transform.Compose([
-        transform.RandScale([args.scale_min, args.scale_max]),
-        transform.RandRotate([args.rotate_min, args.rotate_max], padding=mean, ignore_label=args.padding_label),
-        transform.RandomGaussianBlur(),
-        transform.RandomHorizontalFlip(),
-        transform.Crop([args.train_h, args.train_w], crop_type='rand', padding=mean, ignore_label=args.padding_label),
-        transform.ToTensor()
-        ])
+    train_transform = transforms.Compose([
+        # transform.RandScale([args.scale_min, args.scale_max]),
+        # transform.RandRotate([args.rotate_min, args.rotate_max], padding=mean, ignore_label=args.padding_label),
+        # transform.RandomGaussianBlur(),
+        # transform.RandomHorizontalFlip(),
+        # transform.Crop([args.train_h, args.train_w], crop_type='rand', padding=mean, ignore_label=args.padding_label),
+        transforms.ToTensor(),
+        transforms.Resize(size=(args.train_h, args.train_w), interpolation=transforms.InterpolationMode.BILINEAR),
+        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+    ])
     if args.data_set == 'pascal' or args.data_set == 'coco':
         train_data = dataset.SemData(split=args.split, shot=args.shot, data_root=args.data_root,
                                      data_list=args.train_list, transform=train_transform, mode='train',
@@ -232,39 +235,47 @@ def main(rank=0, world_size=0):
     elif args.data_set == 'sarcoma':
         train_data = dataset_sarcoma.Sarcoma(split=args.split, shot=args.shot, data_root=args.data_root,
                                      data_list=args.train_list, transform=train_transform, mode='train',
-                                     ann_type=args.ann_type, data_set=args.data_set, use_split_coco=args.use_split_coco)
+                                     ann_type=args.ann_type, data_set=args.data_set, use_split_coco=args.use_split_coco,
+                                     image_size=(args.train_h, args.train_w))
+    elif args.data_set == 'btcv':
+        train_data = dataset_btcv.BTCV(split=args.split, shot=args.shot, data_root=args.data_root,
+                                     data_list=args.train_list, transform=train_transform, mode='train',
+                                     ann_type=args.ann_type, data_set=args.data_set, use_split_coco=args.use_split_coco,
+                                     image_size=(args.train_h, args.train_w))
     elif args.data_set.startswith('msd'):
         train_data = dataset_msd.MSD(split=args.split, shot=args.shot, data_root=args.data_root,
                                      data_list=args.train_list, transform=train_transform, mode='train',
-                                     ann_type=args.ann_type, data_set=args.data_set, use_split_coco=args.use_split_coco)
+                                     ann_type=args.ann_type, data_set=args.data_set, use_split_coco=args.use_split_coco,
+                                     image_size=(args.train_h, args.train_w))
     train_sampler = DistributedSampler(train_data, num_replicas=world_size, rank=rank) if args.distributed else None
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=args.batch_size, num_workers=args.workers,
                                                pin_memory=True, sampler=train_sampler, drop_last=True,
                                                shuffle=False if args.distributed else True)
     # Val
     if args.evaluate:
-        if args.resized_val:
-            val_transform = transform.Compose([
-                transform.Resize(size=args.val_size),
-                transform.ToTensor()
-                ])
-        else:
-            val_transform = transform.Compose([
-                transform.test_Resize(size=args.val_size),
-                transform.ToTensor()
-                ])
+        val_transform = transform.Compose([
+            transforms.ToTensor(),
+            transforms.Resize(size=(args.train_h, args.train_w), interpolation=transforms.InterpolationMode.BILINEAR),
+        ])
         if args.data_set == 'pascal' or args.data_set == 'coco':
             val_data = dataset.SemData(split=args.split, shot=args.shot, data_root=args.data_root,
                                        data_list=args.val_list, transform=val_transform, mode='val',
                                        ann_type=args.ann_type, data_set=args.data_set, use_split_coco=args.use_split_coco)
         elif args.data_set == 'sarcoma':
             val_data = dataset_sarcoma.Sarcoma(split=args.split, shot=args.shot, data_root=args.data_root,
-                                       data_list=args.val_list, transform=val_transform, mode='val',
-                                       ann_type=args.ann_type, data_set=args.data_set, use_split_coco=args.use_split_coco)
+                                        data_list=args.train_list, transform=train_transform, mode='val',
+                                        ann_type=args.ann_type, data_set=args.data_set, use_split_coco=args.use_split_coco,
+                                        image_size=(args.train_h, args.train_w))
+        elif args.data_set == 'btcv':
+            val_data = dataset_btcv.BTCV(split=args.split, shot=args.shot, data_root=args.data_root,
+                                        data_list=args.train_list, transform=train_transform, mode='val',
+                                        ann_type=args.ann_type, data_set=args.data_set, use_split_coco=args.use_split_coco,
+                                        image_size=(args.train_h, args.train_w))
         elif args.data_set.startswith('msd'):
             val_data = dataset_msd.MSD(split=args.split, shot=args.shot, data_root=args.data_root,
-                                       data_list=args.val_list, transform=val_transform, mode='val',
-                                       ann_type=args.ann_type, data_set=args.data_set, use_split_coco=args.use_split_coco)
+                                        data_list=args.train_list, transform=train_transform, mode='val',
+                                        ann_type=args.ann_type, data_set=args.data_set, use_split_coco=args.use_split_coco,
+                                        image_size=(args.train_h, args.train_w))
         val_loader = torch.utils.data.DataLoader(val_data, batch_size=args.batch_size_val, shuffle=False,
                                                  num_workers=args.workers, pin_memory=False, sampler=None)
 

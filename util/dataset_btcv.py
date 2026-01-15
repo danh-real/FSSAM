@@ -92,7 +92,7 @@ class BTCV(Dataset):
     def __init__(self, split=3, shot=1, data_root=None, base_data_root=None, data_list=None, data_set=None,
                  use_split_coco=False,
                  transform=None, transform_tri=None, mode='train', ann_type='mask',
-                 ft_transform=None, ft_aug_size=None):
+                 ft_transform=None, ft_aug_size=None, image_size=(1024, 1024)):
 
         assert mode in ['train', 'val']
 
@@ -126,6 +126,7 @@ class BTCV(Dataset):
         self.transform_tri = transform_tri
         self.ft_transform = ft_transform
         self.ft_aug_size = ft_aug_size
+        self.image_h, self.image_w = image_size
 
     def __len__(self):
         return self.num
@@ -177,10 +178,15 @@ class BTCV(Dataset):
         support_image_list = [[] for _ in range(self.shot)]
         support_label_list = [[] for _ in range(self.shot)]
         if self.transform is not None:
-            image, label = self.transform(image, label)
+            image = self.transform(image)
+            label = torch.tensor(label).unsqueeze(0).unsqueeze(1)
+            label = F.interpolate(label, size=(self.image_h, self.image_w), mode="nearest")
+            label = label.squeeze()
             for k in range(self.shot):
-                support_image_list[k], support_label_list[k] = self.transform(support_image_list_ori[k],
-                                                                              support_label_list_ori[k])
+                support_image_list[k] = self.transform(support_image_list_ori[k])
+                support_label_k = torch.tensor(support_label_list_ori[k]).unsqueeze(0).unsqueeze(1)
+                support_label_k = F.interpolate(support_label_k, size=(self.image_h, self.image_w), mode="nearest")
+                support_label_list[k] = support_label_k.squeeze()
 
         s_xs = support_image_list
         s_ys = support_label_list
