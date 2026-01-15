@@ -505,6 +505,7 @@ def train(train_loader, val_loader, model, optimizer, epoch, scaler):
 def validate(val_loader, model, warmup=False):
     if main_process() and not warmup:
         logger.info('>>>>>>>>>>>>>>>> Start Evaluation >>>>>>>>>>>>>>>>')
+        
     batch_time = AverageMeter()
     model_time = AverageMeter()
     data_time = AverageMeter()
