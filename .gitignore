@@ -2,3 +2,4 @@ exp/
 lists/
 pretrained/
 priors/
+*/__pycache__/*
