@@ -399,7 +399,7 @@ def train(train_loader, val_loader, model, optimizer, epoch, scaler):
         input = input.cuda(non_blocking=True)
         target = target.cuda(non_blocking=True)
 
-        with autocast():
+        with autocast(device_type="cuda"):
             output, main_loss, aux_loss1, aux_loss2 = model(s_x=s_input, s_y=s_mask, x=input, y_m=target, cat_idx=subcls)
             # loss = main_loss + args.aux_weight1 * aux_loss1 + args.aux_weight2 * aux_loss2
             loss = main_loss
@@ -580,7 +580,7 @@ def validate(val_loader, model, warmup=False):
 
             start_time = time.time()
             with torch.no_grad():
-                with autocast():
+                with autocast(device_type="cuda"):
                     output, priors = model(s_x=s_input, s_y=s_mask, x=input, y_m=target, cat_idx=subcls, priors=priors)
                     model_time.update(time.time() - start_time)
 
