@@ -34,6 +34,9 @@ from util import transform_new as transform, transform_tri, config
 from util.util import AverageMeter, poly_learning_rate, intersectionAndUnionGPU, get_model_para_number, setup_seed, \
     get_logger, get_save_path, \
     is_same_model, fix_bn, sum_list, check_makedirs
+    
+import warnings
+warnings.filterwarnings("ignore")
 
 cv2.ocl.setUseOpenCL(False)
 cv2.setNumThreads(0)
