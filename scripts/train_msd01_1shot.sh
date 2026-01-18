@@ -33,11 +33,11 @@ else
   exit 1
 fi
 
-python train.py \
+CUDA_VISIBLE_DEVICES=1 python train.py \
     --config=${config} \
     --arch=${arch} \
     --num_refine=3 \
     --ver_refine=v1 \
     --ver_dino=$ver_dino \
-    --distributed \
     2>&1 | tee ${result_dir}/train-$now.log
+    # --distributed \
