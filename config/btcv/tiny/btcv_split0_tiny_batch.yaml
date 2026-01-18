@@ -21,9 +21,9 @@ Train:
   data_set: 'btcv'
   use_split_coco: False # True means FWB setting
   # Optimizer
-  batch_size: 16 # batch size for training (bs8 for 1GPU)
+  batch_size: 8 # batch size for training (bs8 for 1GPU)
   base_lr: 0.0001
-  epochs: 20
+  epochs: 50
   start_epoch: 0
   stop_interval: 25 # stop when the best result is not updated for "stop_interval" epochs
   index_split: -1 # index for determining the params group with 10x learning rate
@@ -43,7 +43,7 @@ Train:
   resized_val: True
   ori_resize: False  # use original label for evaluation
   # Else
-  workers: 4
+  workers: 8
   fix_bn: True
   manual_seed: 321
   seed_deterministic: False

@@ -1,5 +1,5 @@
 Data:
-  data_root: /data/rlsam2/datasets/jpg/MSD/Task10_Colon
+  data_root: /data/datasets/jpg/MSD/Task10_Colon
   train_list: ./lists/coco/train.txt # not important
   val_list: ./lists/coco/val.txt # not important
   classes: 2
@@ -22,8 +22,8 @@ Train:
   use_split_coco: False # True means FWB setting
   # Optimizer
   batch_size: 8 # batch size for training (bs8 for 1GPU)
-  base_lr: 0.0001
-  50
+  base_lr: 0.0004
+  epochs: 100
   start_epoch: 0
   stop_interval: 25 # stop when the best result is not updated for "stop_interval" epochs
   index_split: -1 # index for determining the params group with 10x learning rate
@@ -43,7 +43,7 @@ Train:
   resized_val: True
   ori_resize: False  # use original label for evaluation
   # Else
-  workers: 4
+  workers: 8
   fix_bn: True
   manual_seed: 321
   seed_deterministic: False
@@ -53,7 +53,7 @@ Method:
   layers: 50  # Resnet in PSPNet
   vgg: False
   sam2_type: 'tiny'
-  sam2_weight: '/data/rlsam2/checkpoints/sam2_hiera_tiny.pt'
+  sam2_weight: './pretrained/sam2_hiera_tiny.pt'
   sam2_config: 'sam2_hiera_t.yaml'
   aux_weight1: 0.0
   aux_weight2: 0.0

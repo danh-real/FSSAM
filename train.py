@@ -332,7 +332,7 @@ def main(rank=0, world_size=0):
             writer.add_scalar('FBIoU_train', mIoU_train, epoch_log)
 
         # -----------------------  VAL  -----------------------
-        if args.evaluate and epoch % 2 == 0:
+        if args.evaluate and epoch % 1 == 0:
             mIoU, mDice, mFBIoU = validate(val_loader, model)
             val_num += 1
             if main_process() and args.viz:
@@ -365,7 +365,7 @@ def main(rank=0, world_size=0):
         print('\n<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  Final Best Result   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
         print(args.arch + '\t Group:{} \t Best_step:{}'.format(args.split, best_epoch))
         print('mIoU:{:.4f}'.format(best_miou))
-        print('FBIoU:{:.4f} \t pIoU:{:.4f}'.format(best_FBiou, best_dice))
+        print('FBIoU:{:.4f} \t Dice:{:.4f}'.format(best_FBiou, best_dice))
         print('>' * 80)
         print('%s' % datetime.datetime.now())
 
