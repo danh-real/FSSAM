@@ -23,7 +23,7 @@ Train:
   # Optimizer
   batch_size: 8 # batch size for training (bs8 for 1GPU)
   base_lr: 0.001
-  50
+  epochs: 5
   start_epoch: 0
   stop_interval: 25 # stop when the best result is not updated for "stop_interval" epochs
   index_split: -1 # index for determining the params group with 10x learning rate
