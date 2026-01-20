@@ -310,7 +310,7 @@ def main(rank=0, world_size=0):
     # Global autocast needs to cache the conversion of fp32->bfp16
     # ========================================
     validate(val_loader, model, warmup=True)
-
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.5)
     # amp
     scaler = GradScaler()
     for epoch in range(args.start_epoch, args.epochs):
@@ -332,27 +332,26 @@ def main(rank=0, world_size=0):
             writer.add_scalar('FBIoU_train', mIoU_train, epoch_log)
 
         # -----------------------  VAL  -----------------------
-        if args.evaluate and epoch % 1 == 0:
-            mIoU, mDice, mFBIoU = validate(val_loader, model)
-            val_num += 1
-            if main_process() and args.viz:
-                writer.add_scalar('mDice_val', mDice, epoch_log)
-                writer.add_scalar('FBIoU_val', mFBIoU, epoch_log)
-                writer.add_scalar('mIoU_val', mIoU, epoch_log)
+        # if args.evaluate and epoch % 2 == 0:
+        #     mIoU, mDice, mFBIoU = validate(val_loader, model)
+        #     val_num += 1
+        #     if main_process() and args.viz:
+        #         writer.add_scalar('mDice_val', mDice, epoch_log)
+        #         writer.add_scalar('FBIoU_val', mFBIoU, epoch_log)
+        #         writer.add_scalar('mIoU_val', mIoU, epoch_log)
 
-            # save model for <testing>
-            if mDice > best_dice:
-                best_miou, best_dice, best_FBiou, best_epoch = mIoU, mDice, mFBIoU, epoch
-                keep_epoch = 0
-                if args.shot == 1:
-                    filename = args.snapshot_path + '/train_epoch_' + str(epoch) + '_{:.4f}'.format(best_miou) + '.pth'
-                else:
-                    filename = args.snapshot_path + '/train{}_epoch_'.format(args.shot) + str(epoch) + '_{:.4f}'.format(
-                        best_miou) + '.pth'
-                if main_process():
-                    logger.info('Saving checkpoint to: ' + filename)
-                    torch.save({'epoch': epoch, 'state_dict': model.state_dict(), 'optimizer': optimizer.state_dict()},
-                               filename)
+        #     # save model for <testing>
+        #     if mDice > best_dice:
+        # best_miou, best_dice, best_FBiou, best_epoch = mIoU, mDice, mFBIoU, epoch
+        keep_epoch = 0
+        if args.shot == 1:
+            filename = args.snapshot_path + '/train_epoch_' + str(epoch) #+ '_{:.4f}'.format(best_miou) + '.pth'
+        else:
+            filename = args.snapshot_path + '/train{}_epoch_'.format(args.shot) + str(epoch) #+ '_{:.4f}'.format(best_miou) + '.pth'
+        if main_process():
+            logger.info('Saving checkpoint to: ' + filename)
+            torch.save({'epoch': epoch, 'state_dict': model.state_dict(), 'optimizer': optimizer.state_dict()},
+                        filename)
 
     total_time = time.time() - start_time
     t_m, t_s = divmod(total_time, 60)
