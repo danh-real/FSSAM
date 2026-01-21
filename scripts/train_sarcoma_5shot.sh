@@ -42,4 +42,3 @@ CUDA_VISIBLE_DEVICES=1 python train.py \
     --ver_refine=v1 \
     --ver_dino=$ver_dino \
     2>&1 | tee ${result_dir}/train-$now.log
-    # --distributed \
