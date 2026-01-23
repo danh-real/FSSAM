@@ -1,0 +1,800 @@
+SubEpoch_val: False
+ann_type: mask
+arch: FSSAM
+aux_weight1: 0.0
+aux_weight2: 0.0
+base_lr: 0.001
+batch_size: 8
+batch_size_val: 1
+classes: 2
+data_root: /data/datasets/jpg/MSD/Task02_Heart
+data_set: msd_task02
+distributed: False
+episode: 1000
+epochs: 10
+evaluate: True
+fix_bn: True
+fix_random_seed_val: True
+ignore_label: 255
+index_split: -1
+layers: 50
+manual_seed: 321
+momentum: 0.9
+num_refine: 3
+opts: ['Test_Finetune.weight', 'train_epoch_0.pth']
+ori_resize: False
+padding_label: 255
+power: 0.9
+print_freq: 10
+resized_val: True
+resume: None
+rotate_max: 0
+rotate_min: 0
+sam2_config: sam2_hiera_t.yaml
+sam2_type: tiny
+sam2_weight: ./pretrained/sam2_hiera_tiny.pt
+save_freq: 10
+scale_max: 1.0
+scale_min: 1.0
+seed_deterministic: False
+shot: 1
+split: 0
+start_epoch: 0
+stop_interval: 25
+train_h: 1024
+train_list: ./lists/coco/train.txt
+train_w: 1024
+use_split_coco: False
+val_list: ./lists/coco/val.txt
+val_size: 1024
+ver_dino: dinov2_vitb14
+ver_refine: v1
+vgg: False
+viz: False
+warmup: False
+weight: train_epoch_0.pth
+weight_decay: 0.0
+workers: 8
+zoom_factor: 8
+train_epoch_0.pth
+Number of Parameters: 125526466
+Number of Learnable Parameters: 125526466
+Found 267 valid slices with annotations
+Val: [1/1] 	 Seed: 321
++---------+--------+--------+----------+
+| name    |    iou |   dice |   fb_iou |
++=========+========+========+==========+
+| 0       | 0.5737 | 0.6808 |   0.7848 |
++---------+--------+--------+----------+
+| Average | 0.5737 | 0.6808 |   0.7848 |
++---------+--------+--------+----------+
+
+Total running time: 00h 01m 04s
+Seed0: 123
+Seed:  [321]
+mIoU:  [0.5737]
+FBIoU: [0.7848]
+mDice:  [0.6808]
+-------------------------------------------
+Best_Seed_m: 321 	 Best_Seed_F: 321 	 Best_Seed_p: 321
+Mean_mIoU: 0.5737 	 Mean_FBIoU: 0.7848 	 Mean_mDice: 0.6808
+SubEpoch_val: False
+ann_type: mask
+arch: FSSAM
+aux_weight1: 0.0
+aux_weight2: 0.0
+base_lr: 0.001
+batch_size: 8
+batch_size_val: 1
+classes: 2
+data_root: /data/datasets/jpg/MSD/Task02_Heart
+data_set: msd_task02
+distributed: False
+episode: 1000
+epochs: 10
+evaluate: True
+fix_bn: True
+fix_random_seed_val: True
+ignore_label: 255
+index_split: -1
+layers: 50
+manual_seed: 321
+momentum: 0.9
+num_refine: 3
+opts: ['Test_Finetune.weight', 'train_epoch_1.pth']
+ori_resize: False
+padding_label: 255
+power: 0.9
+print_freq: 10
+resized_val: True
+resume: None
+rotate_max: 0
+rotate_min: 0
+sam2_config: sam2_hiera_t.yaml
+sam2_type: tiny
+sam2_weight: ./pretrained/sam2_hiera_tiny.pt
+save_freq: 10
+scale_max: 1.0
+scale_min: 1.0
+seed_deterministic: False
+shot: 1
+split: 0
+start_epoch: 0
+stop_interval: 25
+train_h: 1024
+train_list: ./lists/coco/train.txt
+train_w: 1024
+use_split_coco: False
+val_list: ./lists/coco/val.txt
+val_size: 1024
+ver_dino: dinov2_vitb14
+ver_refine: v1
+vgg: False
+viz: False
+warmup: False
+weight: train_epoch_1.pth
+weight_decay: 0.0
+workers: 8
+zoom_factor: 8
+train_epoch_1.pth
+Number of Parameters: 125526466
+Number of Learnable Parameters: 125526466
+Found 267 valid slices with annotations
+Val: [1/1] 	 Seed: 321
++---------+--------+--------+----------+
+| name    |    iou |   dice |   fb_iou |
++=========+========+========+==========+
+| 0       | 0.4400 | 0.5660 |   0.7178 |
++---------+--------+--------+----------+
+| Average | 0.4400 | 0.5660 |   0.7178 |
++---------+--------+--------+----------+
+
+Total running time: 00h 01m 05s
+Seed0: 123
+Seed:  [321]
+mIoU:  [0.44]
+FBIoU: [0.7178]
+mDice:  [0.566]
+-------------------------------------------
+Best_Seed_m: 321 	 Best_Seed_F: 321 	 Best_Seed_p: 321
+Mean_mIoU: 0.4400 	 Mean_FBIoU: 0.7178 	 Mean_mDice: 0.5660
+SubEpoch_val: False
+ann_type: mask
+arch: FSSAM
+aux_weight1: 0.0
+aux_weight2: 0.0
+base_lr: 0.001
+batch_size: 8
+batch_size_val: 1
+classes: 2
+data_root: /data/datasets/jpg/MSD/Task02_Heart
+data_set: msd_task02
+distributed: False
+episode: 1000
+epochs: 10
+evaluate: True
+fix_bn: True
+fix_random_seed_val: True
+ignore_label: 255
+index_split: -1
+layers: 50
+manual_seed: 321
+momentum: 0.9
+num_refine: 3
+opts: ['Test_Finetune.weight', 'train_epoch_2.pth']
+ori_resize: False
+padding_label: 255
+power: 0.9
+print_freq: 10
+resized_val: True
+resume: None
+rotate_max: 0
+rotate_min: 0
+sam2_config: sam2_hiera_t.yaml
+sam2_type: tiny
+sam2_weight: ./pretrained/sam2_hiera_tiny.pt
+save_freq: 10
+scale_max: 1.0
+scale_min: 1.0
+seed_deterministic: False
+shot: 1
+split: 0
+start_epoch: 0
+stop_interval: 25
+train_h: 1024
+train_list: ./lists/coco/train.txt
+train_w: 1024
+use_split_coco: False
+val_list: ./lists/coco/val.txt
+val_size: 1024
+ver_dino: dinov2_vitb14
+ver_refine: v1
+vgg: False
+viz: False
+warmup: False
+weight: train_epoch_2.pth
+weight_decay: 0.0
+workers: 8
+zoom_factor: 8
+train_epoch_2.pth
+Number of Parameters: 125526466
+Number of Learnable Parameters: 125526466
+Found 267 valid slices with annotations
+Val: [1/1] 	 Seed: 321
++---------+--------+--------+----------+
+| name    |    iou |   dice |   fb_iou |
++=========+========+========+==========+
+| 0       | 0.0253 | 0.0448 |   0.5090 |
++---------+--------+--------+----------+
+| Average | 0.0253 | 0.0448 |   0.5090 |
++---------+--------+--------+----------+
+
+Total running time: 00h 01m 05s
+Seed0: 123
+Seed:  [321]
+mIoU:  [0.0253]
+FBIoU: [0.509]
+mDice:  [0.0448]
+-------------------------------------------
+Best_Seed_m: 321 	 Best_Seed_F: 321 	 Best_Seed_p: 321
+Mean_mIoU: 0.0253 	 Mean_FBIoU: 0.5090 	 Mean_mDice: 0.0448
+SubEpoch_val: False
+ann_type: mask
+arch: FSSAM
+aux_weight1: 0.0
+aux_weight2: 0.0
+base_lr: 0.001
+batch_size: 8
+batch_size_val: 1
+classes: 2
+data_root: /data/datasets/jpg/MSD/Task02_Heart
+data_set: msd_task02
+distributed: False
+episode: 1000
+epochs: 10
+evaluate: True
+fix_bn: True
+fix_random_seed_val: True
+ignore_label: 255
+index_split: -1
+layers: 50
+manual_seed: 321
+momentum: 0.9
+num_refine: 3
+opts: ['Test_Finetune.weight', 'train_epoch_3.pth']
+ori_resize: False
+padding_label: 255
+power: 0.9
+print_freq: 10
+resized_val: True
+resume: None
+rotate_max: 0
+rotate_min: 0
+sam2_config: sam2_hiera_t.yaml
+sam2_type: tiny
+sam2_weight: ./pretrained/sam2_hiera_tiny.pt
+save_freq: 10
+scale_max: 1.0
+scale_min: 1.0
+seed_deterministic: False
+shot: 1
+split: 0
+start_epoch: 0
+stop_interval: 25
+train_h: 1024
+train_list: ./lists/coco/train.txt
+train_w: 1024
+use_split_coco: False
+val_list: ./lists/coco/val.txt
+val_size: 1024
+ver_dino: dinov2_vitb14
+ver_refine: v1
+vgg: False
+viz: False
+warmup: False
+weight: train_epoch_3.pth
+weight_decay: 0.0
+workers: 8
+zoom_factor: 8
+train_epoch_3.pth
+Number of Parameters: 125526466
+Number of Learnable Parameters: 125526466
+Found 267 valid slices with annotations
+Val: [1/1] 	 Seed: 321
++---------+--------+--------+----------+
+| name    |    iou |   dice |   fb_iou |
++=========+========+========+==========+
+| 0       | 0.0139 | 0.0237 |   0.5033 |
++---------+--------+--------+----------+
+| Average | 0.0139 | 0.0237 |   0.5033 |
++---------+--------+--------+----------+
+
+Total running time: 00h 01m 05s
+Seed0: 123
+Seed:  [321]
+mIoU:  [0.0139]
+FBIoU: [0.5033]
+mDice:  [0.0237]
+-------------------------------------------
+Best_Seed_m: 321 	 Best_Seed_F: 321 	 Best_Seed_p: 321
+Mean_mIoU: 0.0139 	 Mean_FBIoU: 0.5033 	 Mean_mDice: 0.0237
+SubEpoch_val: False
+ann_type: mask
+arch: FSSAM
+aux_weight1: 0.0
+aux_weight2: 0.0
+base_lr: 0.001
+batch_size: 8
+batch_size_val: 1
+classes: 2
+data_root: /data/datasets/jpg/MSD/Task02_Heart
+data_set: msd_task02
+distributed: False
+episode: 1000
+epochs: 10
+evaluate: True
+fix_bn: True
+fix_random_seed_val: True
+ignore_label: 255
+index_split: -1
+layers: 50
+manual_seed: 321
+momentum: 0.9
+num_refine: 3
+opts: ['Test_Finetune.weight', 'train_epoch_4.pth']
+ori_resize: False
+padding_label: 255
+power: 0.9
+print_freq: 10
+resized_val: True
+resume: None
+rotate_max: 0
+rotate_min: 0
+sam2_config: sam2_hiera_t.yaml
+sam2_type: tiny
+sam2_weight: ./pretrained/sam2_hiera_tiny.pt
+save_freq: 10
+scale_max: 1.0
+scale_min: 1.0
+seed_deterministic: False
+shot: 1
+split: 0
+start_epoch: 0
+stop_interval: 25
+train_h: 1024
+train_list: ./lists/coco/train.txt
+train_w: 1024
+use_split_coco: False
+val_list: ./lists/coco/val.txt
+val_size: 1024
+ver_dino: dinov2_vitb14
+ver_refine: v1
+vgg: False
+viz: False
+warmup: False
+weight: train_epoch_4.pth
+weight_decay: 0.0
+workers: 8
+zoom_factor: 8
+train_epoch_4.pth
+Number of Parameters: 125526466
+Number of Learnable Parameters: 125526466
+Found 267 valid slices with annotations
+Val: [1/1] 	 Seed: 321
++---------+--------+--------+----------+
+| name    |    iou |   dice |   fb_iou |
++=========+========+========+==========+
+| 0       | 0.0057 | 0.0094 |   0.4991 |
++---------+--------+--------+----------+
+| Average | 0.0057 | 0.0094 |   0.4991 |
++---------+--------+--------+----------+
+
+Total running time: 00h 01m 04s
+Seed0: 123
+Seed:  [321]
+mIoU:  [0.0057]
+FBIoU: [0.4991]
+mDice:  [0.0094]
+-------------------------------------------
+Best_Seed_m: 321 	 Best_Seed_F: 321 	 Best_Seed_p: 321
+Mean_mIoU: 0.0057 	 Mean_FBIoU: 0.4991 	 Mean_mDice: 0.0094
+SubEpoch_val: False
+ann_type: mask
+arch: FSSAM
+aux_weight1: 0.0
+aux_weight2: 0.0
+base_lr: 0.001
+batch_size: 8
+batch_size_val: 1
+classes: 2
+data_root: /data/datasets/jpg/MSD/Task02_Heart
+data_set: msd_task02
+distributed: False
+episode: 1000
+epochs: 10
+evaluate: True
+fix_bn: True
+fix_random_seed_val: True
+ignore_label: 255
+index_split: -1
+layers: 50
+manual_seed: 321
+momentum: 0.9
+num_refine: 3
+opts: ['Test_Finetune.weight', 'train_epoch_5.pth']
+ori_resize: False
+padding_label: 255
+power: 0.9
+print_freq: 10
+resized_val: True
+resume: None
+rotate_max: 0
+rotate_min: 0
+sam2_config: sam2_hiera_t.yaml
+sam2_type: tiny
+sam2_weight: ./pretrained/sam2_hiera_tiny.pt
+save_freq: 10
+scale_max: 1.0
+scale_min: 1.0
+seed_deterministic: False
+shot: 1
+split: 0
+start_epoch: 0
+stop_interval: 25
+train_h: 1024
+train_list: ./lists/coco/train.txt
+train_w: 1024
+use_split_coco: False
+val_list: ./lists/coco/val.txt
+val_size: 1024
+ver_dino: dinov2_vitb14
+ver_refine: v1
+vgg: False
+viz: False
+warmup: False
+weight: train_epoch_5.pth
+weight_decay: 0.0
+workers: 8
+zoom_factor: 8
+train_epoch_5.pth
+Number of Parameters: 125526466
+Number of Learnable Parameters: 125526466
+Found 267 valid slices with annotations
+Val: [1/1] 	 Seed: 321
++---------+--------+--------+----------+
+| name    |    iou |   dice |   fb_iou |
++=========+========+========+==========+
+| 0       | 0.0020 | 0.0038 |   0.4973 |
++---------+--------+--------+----------+
+| Average | 0.0020 | 0.0038 |   0.4973 |
++---------+--------+--------+----------+
+
+Total running time: 00h 01m 05s
+Seed0: 123
+Seed:  [321]
+mIoU:  [0.002]
+FBIoU: [0.4973]
+mDice:  [0.0038]
+-------------------------------------------
+Best_Seed_m: 321 	 Best_Seed_F: 321 	 Best_Seed_p: 321
+Mean_mIoU: 0.0020 	 Mean_FBIoU: 0.4973 	 Mean_mDice: 0.0038
+SubEpoch_val: False
+ann_type: mask
+arch: FSSAM
+aux_weight1: 0.0
+aux_weight2: 0.0
+base_lr: 0.001
+batch_size: 8
+batch_size_val: 1
+classes: 2
+data_root: /data/datasets/jpg/MSD/Task02_Heart
+data_set: msd_task02
+distributed: False
+episode: 1000
+epochs: 10
+evaluate: True
+fix_bn: True
+fix_random_seed_val: True
+ignore_label: 255
+index_split: -1
+layers: 50
+manual_seed: 321
+momentum: 0.9
+num_refine: 3
+opts: ['Test_Finetune.weight', 'train_epoch_6.pth']
+ori_resize: False
+padding_label: 255
+power: 0.9
+print_freq: 10
+resized_val: True
+resume: None
+rotate_max: 0
+rotate_min: 0
+sam2_config: sam2_hiera_t.yaml
+sam2_type: tiny
+sam2_weight: ./pretrained/sam2_hiera_tiny.pt
+save_freq: 10
+scale_max: 1.0
+scale_min: 1.0
+seed_deterministic: False
+shot: 1
+split: 0
+start_epoch: 0
+stop_interval: 25
+train_h: 1024
+train_list: ./lists/coco/train.txt
+train_w: 1024
+use_split_coco: False
+val_list: ./lists/coco/val.txt
+val_size: 1024
+ver_dino: dinov2_vitb14
+ver_refine: v1
+vgg: False
+viz: False
+warmup: False
+weight: train_epoch_6.pth
+weight_decay: 0.0
+workers: 8
+zoom_factor: 8
+train_epoch_6.pth
+Number of Parameters: 125526466
+Number of Learnable Parameters: 125526466
+Found 267 valid slices with annotations
+Val: [1/1] 	 Seed: 321
++---------+--------+--------+----------+
+| name    |    iou |   dice |   fb_iou |
++=========+========+========+==========+
+| 0       | 0.0055 | 0.0103 |   0.4991 |
++---------+--------+--------+----------+
+| Average | 0.0055 | 0.0103 |   0.4991 |
++---------+--------+--------+----------+
+
+Total running time: 00h 01m 06s
+Seed0: 123
+Seed:  [321]
+mIoU:  [0.0055]
+FBIoU: [0.4991]
+mDice:  [0.0103]
+-------------------------------------------
+Best_Seed_m: 321 	 Best_Seed_F: 321 	 Best_Seed_p: 321
+Mean_mIoU: 0.0055 	 Mean_FBIoU: 0.4991 	 Mean_mDice: 0.0103
+SubEpoch_val: False
+ann_type: mask
+arch: FSSAM
+aux_weight1: 0.0
+aux_weight2: 0.0
+base_lr: 0.001
+batch_size: 8
+batch_size_val: 1
+classes: 2
+data_root: /data/datasets/jpg/MSD/Task02_Heart
+data_set: msd_task02
+distributed: False
+episode: 1000
+epochs: 10
+evaluate: True
+fix_bn: True
+fix_random_seed_val: True
+ignore_label: 255
+index_split: -1
+layers: 50
+manual_seed: 321
+momentum: 0.9
+num_refine: 3
+opts: ['Test_Finetune.weight', 'train_epoch_7.pth']
+ori_resize: False
+padding_label: 255
+power: 0.9
+print_freq: 10
+resized_val: True
+resume: None
+rotate_max: 0
+rotate_min: 0
+sam2_config: sam2_hiera_t.yaml
+sam2_type: tiny
+sam2_weight: ./pretrained/sam2_hiera_tiny.pt
+save_freq: 10
+scale_max: 1.0
+scale_min: 1.0
+seed_deterministic: False
+shot: 1
+split: 0
+start_epoch: 0
+stop_interval: 25
+train_h: 1024
+train_list: ./lists/coco/train.txt
+train_w: 1024
+use_split_coco: False
+val_list: ./lists/coco/val.txt
+val_size: 1024
+ver_dino: dinov2_vitb14
+ver_refine: v1
+vgg: False
+viz: False
+warmup: False
+weight: train_epoch_7.pth
+weight_decay: 0.0
+workers: 8
+zoom_factor: 8
+train_epoch_7.pth
+Number of Parameters: 125526466
+Number of Learnable Parameters: 125526466
+Found 267 valid slices with annotations
+Val: [1/1] 	 Seed: 321
++---------+--------+--------+----------+
+| name    |    iou |   dice |   fb_iou |
++=========+========+========+==========+
+| 0       | 0.0014 | 0.0028 |   0.4970 |
++---------+--------+--------+----------+
+| Average | 0.0014 | 0.0028 |   0.4970 |
++---------+--------+--------+----------+
+
+Total running time: 00h 01m 05s
+Seed0: 123
+Seed:  [321]
+mIoU:  [0.0014]
+FBIoU: [0.497]
+mDice:  [0.0028]
+-------------------------------------------
+Best_Seed_m: 321 	 Best_Seed_F: 321 	 Best_Seed_p: 321
+Mean_mIoU: 0.0014 	 Mean_FBIoU: 0.4970 	 Mean_mDice: 0.0028
+SubEpoch_val: False
+ann_type: mask
+arch: FSSAM
+aux_weight1: 0.0
+aux_weight2: 0.0
+base_lr: 0.001
+batch_size: 8
+batch_size_val: 1
+classes: 2
+data_root: /data/datasets/jpg/MSD/Task02_Heart
+data_set: msd_task02
+distributed: False
+episode: 1000
+epochs: 10
+evaluate: True
+fix_bn: True
+fix_random_seed_val: True
+ignore_label: 255
+index_split: -1
+layers: 50
+manual_seed: 321
+momentum: 0.9
+num_refine: 3
+opts: ['Test_Finetune.weight', 'train_epoch_8.pth']
+ori_resize: False
+padding_label: 255
+power: 0.9
+print_freq: 10
+resized_val: True
+resume: None
+rotate_max: 0
+rotate_min: 0
+sam2_config: sam2_hiera_t.yaml
+sam2_type: tiny
+sam2_weight: ./pretrained/sam2_hiera_tiny.pt
+save_freq: 10
+scale_max: 1.0
+scale_min: 1.0
+seed_deterministic: False
+shot: 1
+split: 0
+start_epoch: 0
+stop_interval: 25
+train_h: 1024
+train_list: ./lists/coco/train.txt
+train_w: 1024
+use_split_coco: False
+val_list: ./lists/coco/val.txt
+val_size: 1024
+ver_dino: dinov2_vitb14
+ver_refine: v1
+vgg: False
+viz: False
+warmup: False
+weight: train_epoch_8.pth
+weight_decay: 0.0
+workers: 8
+zoom_factor: 8
+train_epoch_8.pth
+Number of Parameters: 125526466
+Number of Learnable Parameters: 125526466
+Found 267 valid slices with annotations
+Val: [1/1] 	 Seed: 321
++---------+--------+--------+----------+
+| name    |    iou |   dice |   fb_iou |
++=========+========+========+==========+
+| 0       | 0.0021 | 0.0040 |   0.4973 |
++---------+--------+--------+----------+
+| Average | 0.0021 | 0.0040 |   0.4973 |
++---------+--------+--------+----------+
+
+Total running time: 00h 01m 06s
+Seed0: 123
+Seed:  [321]
+mIoU:  [0.0021]
+FBIoU: [0.4973]
+mDice:  [0.004]
+-------------------------------------------
+Best_Seed_m: 321 	 Best_Seed_F: 321 	 Best_Seed_p: 321
+Mean_mIoU: 0.0021 	 Mean_FBIoU: 0.4973 	 Mean_mDice: 0.0040
+SubEpoch_val: False
+ann_type: mask
+arch: FSSAM
+aux_weight1: 0.0
+aux_weight2: 0.0
+base_lr: 0.001
+batch_size: 8
+batch_size_val: 1
+classes: 2
+data_root: /data/datasets/jpg/MSD/Task02_Heart
+data_set: msd_task02
+distributed: False
+episode: 1000
+epochs: 10
+evaluate: True
+fix_bn: True
+fix_random_seed_val: True
+ignore_label: 255
+index_split: -1
+layers: 50
+manual_seed: 321
+momentum: 0.9
+num_refine: 3
+opts: ['Test_Finetune.weight', 'train_epoch_9.pth']
+ori_resize: False
+padding_label: 255
+power: 0.9
+print_freq: 10
+resized_val: True
+resume: None
+rotate_max: 0
+rotate_min: 0
+sam2_config: sam2_hiera_t.yaml
+sam2_type: tiny
+sam2_weight: ./pretrained/sam2_hiera_tiny.pt
+save_freq: 10
+scale_max: 1.0
+scale_min: 1.0
+seed_deterministic: False
+shot: 1
+split: 0
+start_epoch: 0
+stop_interval: 25
+train_h: 1024
+train_list: ./lists/coco/train.txt
+train_w: 1024
+use_split_coco: False
+val_list: ./lists/coco/val.txt
+val_size: 1024
+ver_dino: dinov2_vitb14
+ver_refine: v1
+vgg: False
+viz: False
+warmup: False
+weight: train_epoch_9.pth
+weight_decay: 0.0
+workers: 8
+zoom_factor: 8
+train_epoch_9.pth
+Number of Parameters: 125526466
+Number of Learnable Parameters: 125526466
+Found 267 valid slices with annotations
+Val: [1/1] 	 Seed: 321
++---------+--------+--------+----------+
+| name    |    iou |   dice |   fb_iou |
++=========+========+========+==========+
+| 0       | 0.0022 | 0.0042 |   0.4974 |
++---------+--------+--------+----------+
+| Average | 0.0022 | 0.0042 |   0.4974 |
++---------+--------+--------+----------+
+
+Total running time: 00h 01m 05s
+Seed0: 123
+Seed:  [321]
+mIoU:  [0.0022]
+FBIoU: [0.4974]
+mDice:  [0.0042]
+-------------------------------------------
+Best_Seed_m: 321 	 Best_Seed_F: 321 	 Best_Seed_p: 321
+Mean_mIoU: 0.0022 	 Mean_FBIoU: 0.4974 	 Mean_mDice: 0.0042

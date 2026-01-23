@@ -23,12 +23,13 @@ import torch.multiprocessing as mp
 import torch.distributed as dist
 from torch.utils.data.distributed import DistributedSampler
 from torch import autocast, GradScaler
+from torchvision import transforms
 
 from tensorboardX import SummaryWriter
 
 from model import FSSAM, FSSAM5s
 
-from util import dataset, dataset_sarcoma
+from util import dataset, dataset_sarcoma, dataset_btcv, dataset_msd
 from util import transform_new as transform, transform_tri, config
 from util.util import AverageMeter, poly_learning_rate, intersectionAndUnionGPU, get_model_para_number, setup_seed, \
     get_logger, get_save_path, \
@@ -126,6 +127,8 @@ def get_model(args):
     get_save_path(args)
     check_makedirs(args.snapshot_path)
     check_makedirs(args.result_path)
+    
+    print(args.weight)
 
     if args.weight:
         weight_path = osp.join(args.snapshot_path, args.weight)
@@ -181,16 +184,10 @@ def main():
     std = [item * value_scale for item in std]
     # Val
     if args.evaluate:
-        if args.resized_val:
-            val_transform = transform.Compose([
-                transform.Resize(size=args.val_size),
-                transform.ToTensor()
-                ])
-        else:
-            val_transform = transform.Compose([
-                transform.test_Resize(size=args.val_size),
-                transform.ToTensor()
-                ])
+        val_transform = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Resize(size=(args.train_h, args.train_w), interpolation=transforms.InterpolationMode.BILINEAR),
+        ])
         if args.data_set == 'pascal' or args.data_set == 'coco':
             val_data = dataset.SemData(split=args.split, shot=args.shot, data_root=args.data_root,
                                        data_list=args.val_list, transform=val_transform, mode='val',
@@ -199,7 +196,16 @@ def main():
             val_data = dataset_sarcoma.Sarcoma(split=args.split, shot=args.shot, data_root=args.data_root,
                                        data_list=args.val_list, transform=val_transform, mode='val',
                                        ann_type=args.ann_type, data_set=args.data_set, use_split_coco=args.use_split_coco)
-        
+        elif args.data_set == 'btcv':
+            val_data = dataset_btcv.BTCV(split=args.split, shot=args.shot, data_root=args.data_root,
+                                        data_list=args.train_list, transform=val_transform, mode='val',
+                                        ann_type=args.ann_type, data_set=args.data_set, use_split_coco=args.use_split_coco,
+                                        image_size=(args.train_h, args.train_w))
+        elif args.data_set.startswith('msd'):
+            val_data = dataset_msd.MSD(split=args.split, shot=args.shot, data_root=args.data_root,
+                                        data_list=args.train_list, transform=val_transform, mode='val',
+                                        ann_type=args.ann_type, data_set=args.data_set, use_split_coco=args.use_split_coco,
+                                        image_size=(args.train_h, args.train_w))
         val_loader = torch.utils.data.DataLoader(val_data, batch_size=args.batch_size_val, shuffle=False,
                                                  num_workers=args.workers, pin_memory=False, sampler=None)
 

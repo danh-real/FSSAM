@@ -1,24 +1,20 @@
-dataset=sarcoma  # pascal/coco
-exp_name=split0  # 0/1/2/3
-shot=5  # 1/5
-arch=FSSAM5s  # FSSAM
-net=tiny  # small
+bash scripts/test/test_msd_task03_1shot.sh
+bash scripts/test/test_msd_task03_5shot.sh
 
-if [ $shot -eq 1 ]; then
-  postfix=batch
-elif [ $shot -eq 5 ]; then
-  postfix=5s_batch
-else
-  echo "Only 1 and 5 shot are supported"
-  exit 1
-fi
+bash scripts/test/test_msd_task04_1shot.sh
+bash scripts/test/test_msd_task04_5shot.sh
 
-config=config/${dataset}/${net}/${dataset}_${exp_name}_${net}_${postfix}.yaml
+bash scripts/test/test_msd_task05_1shot.sh
+bash scripts/test/test_msd_task05_5shot.sh
 
-CUDA_VISIBLE_DEVICES=1 python test.py \
-        --config=${config} \
-        --arch=${arch} \
-        --num_refine=3 \
-        --ver_refine=v1 \
-        --ver_dino=dinov2_vitb14 \
-        --episode=1000
+bash scripts/test/test_msd_task06_1shot.sh
+bash scripts/test/test_msd_task06_5shot.sh
+
+bash scripts/test/test_msd_task07_1shot.sh
+bash scripts/test/test_msd_task07_5shot.sh
+
+bash scripts/test/test_msd_task08_1shot.sh
+bash scripts/test/test_msd_task08_5shot.sh
+
+bash scripts/test/test_msd_task09_1shot.sh
+bash scripts/test/test_msd_task09_5shot.sh
