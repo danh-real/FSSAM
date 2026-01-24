@@ -33,7 +33,7 @@ else
   exit 1
 fi
 
-python train.py \
+CUDA_VISIBLE_DEVICES=1 python train.py \
     --config=${config} \
     --arch=${arch} \
     --num_refine=3 \

@@ -332,7 +332,7 @@ def main(rank=0, world_size=0):
             writer.add_scalar('FBIoU_train', mIoU_train, epoch_log)
 
         # -----------------------  VAL  -----------------------
-        if args.evaluate and epoch % 2 == 0:
+        if args.evaluate and epoch % 1 == 0:
             mIoU, mDice, mFBIoU = validate(val_loader, model)
             val_num += 1
             if main_process() and args.viz:
