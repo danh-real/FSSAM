@@ -1,5 +1,5 @@
 Data:
-  data_root: /data/rlsam2/datasets/jpg/MSD/Task01_BrainTumour
+  data_root: /data/datasets/jpg/MSD/Task01_BrainTumour
   train_list: ./lists/coco/train.txt # not important
   val_list: ./lists/coco/val.txt # not important
   classes: 2
@@ -53,7 +53,7 @@ Method:
   layers: 50  # Resnet in PSPNet
   vgg: False
   sam2_type: 'tiny'
-  sam2_weight: '/data/rlsam2/checkpoints/sam2_hiera_tiny.pt'
+  sam2_weight: './pretrained/sam2_hiera_tiny.pt'
   sam2_config: 'sam2_hiera_t.yaml'
   aux_weight1: 0.0
   aux_weight2: 0.0

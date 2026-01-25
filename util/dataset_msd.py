@@ -126,7 +126,7 @@ class MSD(Dataset):
         self.image_h, self.image_w = image_size
 
     def __len__(self):
-        return self.num
+        return min(self.num, 4000) if self.mode == "train" else self.num
 
     def __getitem__(self, index):
         image_path, support_image_path_list, class_id = self.sample_episode(index)

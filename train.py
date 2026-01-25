@@ -449,7 +449,7 @@ def train(train_loader, val_loader, model, optimizer, epoch, scaler):
                         'Data {data_time.val:.3f} ({data_time.avg:.3f}) '
                         'Batch {batch_time.val:.3f} ({batch_time.avg:.3f}) '
                         'Remain {remain_time} '
-                        'Loss {loss_meter.val:.4f} '.format(epoch + 1, args.epochs, i + 1, len(train_loader),
+                        'Loss {loss_meter.val:.4f} ({loss_meter.avg:.3f})'.format(epoch + 1, args.epochs, i + 1, len(train_loader),
                                                           batch_time=batch_time,
                                                           data_time=data_time,
                                                           remain_time=remain_time,
