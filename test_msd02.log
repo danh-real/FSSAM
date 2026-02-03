@@ -7,7 +7,7 @@ base_lr: 0.001
 batch_size: 8
 batch_size_val: 1
 classes: 2
-data_root: /data/datasets/jpg/MSD/Task02_Heart
+data_root: /data/rlsam2/datasets/jpg/MSD/Task02_Heart
 data_set: msd_task02
 distributed: False
 episode: 1000
@@ -32,7 +32,7 @@ rotate_max: 0
 rotate_min: 0
 sam2_config: sam2_hiera_t.yaml
 sam2_type: tiny
-sam2_weight: ./pretrained/sam2_hiera_tiny.pt
+sam2_weight:/data/checkpoints/sam2_hiera_tiny.pt
 save_freq: 10
 scale_max: 1.0
 scale_min: 1.0
@@ -87,7 +87,7 @@ base_lr: 0.001
 batch_size: 8
 batch_size_val: 1
 classes: 2
-data_root: /data/datasets/jpg/MSD/Task02_Heart
+data_root: /data/rlsam2/datasets/jpg/MSD/Task02_Heart
 data_set: msd_task02
 distributed: False
 episode: 1000
@@ -112,7 +112,7 @@ rotate_max: 0
 rotate_min: 0
 sam2_config: sam2_hiera_t.yaml
 sam2_type: tiny
-sam2_weight: ./pretrained/sam2_hiera_tiny.pt
+sam2_weight:/data/checkpoints/sam2_hiera_tiny.pt
 save_freq: 10
 scale_max: 1.0
 scale_min: 1.0
@@ -167,7 +167,7 @@ base_lr: 0.001
 batch_size: 8
 batch_size_val: 1
 classes: 2
-data_root: /data/datasets/jpg/MSD/Task02_Heart
+data_root: /data/rlsam2/datasets/jpg/MSD/Task02_Heart
 data_set: msd_task02
 distributed: False
 episode: 1000
@@ -192,7 +192,7 @@ rotate_max: 0
 rotate_min: 0
 sam2_config: sam2_hiera_t.yaml
 sam2_type: tiny
-sam2_weight: ./pretrained/sam2_hiera_tiny.pt
+sam2_weight:/data/checkpoints/sam2_hiera_tiny.pt
 save_freq: 10
 scale_max: 1.0
 scale_min: 1.0
@@ -247,7 +247,7 @@ base_lr: 0.001
 batch_size: 8
 batch_size_val: 1
 classes: 2
-data_root: /data/datasets/jpg/MSD/Task02_Heart
+data_root: /data/rlsam2/datasets/jpg/MSD/Task02_Heart
 data_set: msd_task02
 distributed: False
 episode: 1000
@@ -272,7 +272,7 @@ rotate_max: 0
 rotate_min: 0
 sam2_config: sam2_hiera_t.yaml
 sam2_type: tiny
-sam2_weight: ./pretrained/sam2_hiera_tiny.pt
+sam2_weight:/data/checkpoints/sam2_hiera_tiny.pt
 save_freq: 10
 scale_max: 1.0
 scale_min: 1.0
@@ -327,7 +327,7 @@ base_lr: 0.001
 batch_size: 8
 batch_size_val: 1
 classes: 2
-data_root: /data/datasets/jpg/MSD/Task02_Heart
+data_root: /data/rlsam2/datasets/jpg/MSD/Task02_Heart
 data_set: msd_task02
 distributed: False
 episode: 1000
@@ -352,7 +352,7 @@ rotate_max: 0
 rotate_min: 0
 sam2_config: sam2_hiera_t.yaml
 sam2_type: tiny
-sam2_weight: ./pretrained/sam2_hiera_tiny.pt
+sam2_weight:/data/checkpoints/sam2_hiera_tiny.pt
 save_freq: 10
 scale_max: 1.0
 scale_min: 1.0
@@ -407,7 +407,7 @@ base_lr: 0.001
 batch_size: 8
 batch_size_val: 1
 classes: 2
-data_root: /data/datasets/jpg/MSD/Task02_Heart
+data_root: /data/rlsam2/datasets/jpg/MSD/Task02_Heart
 data_set: msd_task02
 distributed: False
 episode: 1000
@@ -432,7 +432,7 @@ rotate_max: 0
 rotate_min: 0
 sam2_config: sam2_hiera_t.yaml
 sam2_type: tiny
-sam2_weight: ./pretrained/sam2_hiera_tiny.pt
+sam2_weight:/data/checkpoints/sam2_hiera_tiny.pt
 save_freq: 10
 scale_max: 1.0
 scale_min: 1.0
@@ -487,7 +487,7 @@ base_lr: 0.001
 batch_size: 8
 batch_size_val: 1
 classes: 2
-data_root: /data/datasets/jpg/MSD/Task02_Heart
+data_root: /data/rlsam2/datasets/jpg/MSD/Task02_Heart
 data_set: msd_task02
 distributed: False
 episode: 1000
@@ -512,7 +512,7 @@ rotate_max: 0
 rotate_min: 0
 sam2_config: sam2_hiera_t.yaml
 sam2_type: tiny
-sam2_weight: ./pretrained/sam2_hiera_tiny.pt
+sam2_weight:/data/checkpoints/sam2_hiera_tiny.pt
 save_freq: 10
 scale_max: 1.0
 scale_min: 1.0
@@ -567,7 +567,7 @@ base_lr: 0.001
 batch_size: 8
 batch_size_val: 1
 classes: 2
-data_root: /data/datasets/jpg/MSD/Task02_Heart
+data_root: /data/rlsam2/datasets/jpg/MSD/Task02_Heart
 data_set: msd_task02
 distributed: False
 episode: 1000
@@ -592,7 +592,7 @@ rotate_max: 0
 rotate_min: 0
 sam2_config: sam2_hiera_t.yaml
 sam2_type: tiny
-sam2_weight: ./pretrained/sam2_hiera_tiny.pt
+sam2_weight:/data/checkpoints/sam2_hiera_tiny.pt
 save_freq: 10
 scale_max: 1.0
 scale_min: 1.0
@@ -647,7 +647,7 @@ base_lr: 0.001
 batch_size: 8
 batch_size_val: 1
 classes: 2
-data_root: /data/datasets/jpg/MSD/Task02_Heart
+data_root: /data/rlsam2/datasets/jpg/MSD/Task02_Heart
 data_set: msd_task02
 distributed: False
 episode: 1000
@@ -672,7 +672,7 @@ rotate_max: 0
 rotate_min: 0
 sam2_config: sam2_hiera_t.yaml
 sam2_type: tiny
-sam2_weight: ./pretrained/sam2_hiera_tiny.pt
+sam2_weight:/data/checkpoints/sam2_hiera_tiny.pt
 save_freq: 10
 scale_max: 1.0
 scale_min: 1.0
@@ -727,7 +727,7 @@ base_lr: 0.001
 batch_size: 8
 batch_size_val: 1
 classes: 2
-data_root: /data/datasets/jpg/MSD/Task02_Heart
+data_root: /data/rlsam2/datasets/jpg/MSD/Task02_Heart
 data_set: msd_task02
 distributed: False
 episode: 1000
@@ -752,7 +752,7 @@ rotate_max: 0
 rotate_min: 0
 sam2_config: sam2_hiera_t.yaml
 sam2_type: tiny
-sam2_weight: ./pretrained/sam2_hiera_tiny.pt
+sam2_weight:/data/checkpoints/sam2_hiera_tiny.pt
 save_freq: 10
 scale_max: 1.0
 scale_min: 1.0
