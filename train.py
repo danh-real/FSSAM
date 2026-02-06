@@ -327,7 +327,7 @@ def main(rank=0, world_size=0):
 
         # ----------------------  TRAIN  ----------------------
         loss_train, mIoU_train, mAcc_train, allAcc_train = train(train_loader, val_loader, model, optimizer, epoch, scaler)
-
+        scheduler.step()
         if main_process() and args.viz:
             writer.add_scalar('FBIoU_train', mIoU_train, epoch_log)
 
